@@ -6,28 +6,6 @@ import { getAssignableMembers } from '../../data/roleHierarchy';
 import { employees as localEmployees } from '../../data/employeeData';
 import { storiesAPI, tasksAPI, employeesAPI } from '../../services/api';
 
-const initialStories = [
-    { id: 'ST-101', title: 'Implement Auth Module', assignee: 'Vikram Singh', type: 'Dev', alignment: 94, risk: 'Low', approval: 'Approved', delay: 0, est: '8h', actual: '7.5h', status: 'Done' },
-    { id: 'ST-102', title: 'Setup CI/CD Pipeline', assignee: 'Ananya Reddy', type: 'DevOps', alignment: 78, risk: 'High', approval: 'Pending', delay: 6, est: '12h', actual: '16h', status: 'In Progress' },
-    { id: 'ST-103', title: 'User Profile API', assignee: 'Vikram Singh', type: 'Dev', alignment: 88, risk: 'Low', approval: 'Approved', delay: 0, est: '6h', actual: '5h', status: 'In Review' },
-    { id: 'ST-104', title: 'Dashboard UI Redesign', assignee: 'Rahul Verma', type: 'Dev', alignment: 65, risk: 'High', approval: 'Pending', delay: 12, est: '10h', actual: '18h', status: 'In Progress' },
-    { id: 'ST-105', title: 'Integration Tests – Sprint API', assignee: 'Meera Nair', type: 'QA', alignment: 85, risk: 'Low', approval: 'Approved', delay: 0, est: '4h', actual: '4h', status: 'Done' },
-    { id: 'ST-106', title: 'Database Migration Script', assignee: 'Ananya Reddy', type: 'DevOps', alignment: 72, risk: 'Medium', approval: 'Pending', delay: 3, est: '5h', actual: '7h', status: 'In Progress' },
-    { id: 'ST-107', title: 'Notification Service', assignee: 'Karan Joshi', type: 'Dev', alignment: 58, risk: 'High', approval: 'Rejected', delay: 18, est: '8h', actual: '—', status: 'To Do' },
-    { id: 'ST-108', title: 'Load Testing Setup', assignee: 'Meera Nair', type: 'QA', alignment: 90, risk: 'Low', approval: 'Approved', delay: 0, est: '6h', actual: '5.5h', status: 'Done' },
-    { id: 'ST-109', title: 'API Rate Limiting', assignee: 'Vikram Singh', type: 'Dev', alignment: 82, risk: 'Low', approval: 'In Review', delay: 0, est: '4h', actual: '—', status: 'In Review' },
-    { id: 'ST-110', title: 'Monitoring Dashboard', assignee: 'Ananya Reddy', type: 'DevOps', alignment: 70, risk: 'Medium', approval: 'Pending', delay: 4, est: '10h', actual: '—', status: 'To Do' },
-];
-
-/* Tasks assigned TO the PM from CEO */
-const initialMyTasks = [
-    { id: 'T-101', title: 'Finalize Q2 Sprint Roadmap', from: 'Rajesh Mehta (CEO)', priority: 'High', status: 'In Progress', due: 'Feb 22', est: '8h', actual: '5h' },
-    { id: 'T-102', title: 'Prepare Board Presentation', from: 'Rajesh Mehta (CEO)', priority: 'Critical', status: 'To Do', due: 'Feb 25', est: '6h', actual: '—' },
-    { id: 'T-103', title: 'Review Resource Allocation', from: 'Rajesh Mehta (CEO)', priority: 'Medium', status: 'Done', due: 'Feb 18', est: '4h', actual: '4h' },
-    { id: 'T-104', title: 'Update Client Demo Environment', from: 'Rajesh Mehta (CEO)', priority: 'High', status: 'In Progress', due: 'Feb 24', est: '5h', actual: '3h' },
-    { id: 'T-105', title: 'Quarterly Risk Report', from: 'Rajesh Mehta (CEO)', priority: 'Medium', status: 'To Do', due: 'Mar 01', est: '4h', actual: '—' },
-];
-
 /* PM can only assign to roles below PM in the hierarchy: LEAD, DEVELOPER, DEVOPS, QA */
 let teamMembers = getAssignableMembers('PM', localEmployees).map(e => e.name);
 const riskBadge = { Low: { bg: '#10b981', label: '🟢 Healthy' }, Medium: { bg: '#f59e0b', label: '🟡 Moderate' }, High: { bg: '#ef4444', label: '🔴 High Risk' } };
@@ -38,8 +16,8 @@ const getColor = (v) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
 const selectStyle = { padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', fontSize: '0.75rem', background: '#fff', cursor: 'pointer' };
 
 export default function PMTasks() {
-    const [storiesData, setStoriesData] = useState(initialStories);
-    const [myTasks, setMyTasks] = useState(initialMyTasks);
+    const [storiesData, setStoriesData] = useState([]);
+    const [myTasks, setMyTasks] = useState([]);
     const [view, setView] = useState('board');
     const [sprintFilter, setSprintFilter] = useState('All');
     const [riskFilter, setRiskFilter] = useState('All');
@@ -72,11 +50,13 @@ export default function PMTasks() {
 
     const handleAddStory = () => {
         if (!newStory.title || !newStory.assignee) return;
-        const nextId = `ST-${111 + storiesData.length - 10}`;
-        setStoriesData(prev => [...prev, {
+        const nextId = `ST-${111 + storiesData.length}`;
+        const storyData = {
             id: nextId, title: newStory.title, assignee: newStory.assignee, type: newStory.type,
             alignment: 0, risk: 'Low', approval: 'Pending', delay: 0, est: newStory.est || '—', actual: '—', status: newStory.status
-        }]);
+        };
+        setStoriesData(prev => [...prev, storyData]);
+        storiesAPI.create(storyData).catch(err => console.error('Failed to create story:', err));
         setNewStory({ title: '', assignee: '', type: 'Dev', est: '', status: 'To Do' });
         setShowAssignModal(false);
     };

@@ -17,66 +17,6 @@ import ConfirmToast from '../../components/ConfirmToast';
  *   DEVELOPER, DEVOPS, QA → cannot assign
  */
 
-/* ── Mock task data per role ── */
-const ASSIGNED_TO_ME = {
-    HR: [
-        { id: 'T-051', title: 'Update Company Leave Policy', from: 'Rajesh Mehta (CEO)', type: 'Policy', priority: 'High', status: 'In Progress', due: 'Feb 22', est: '6h', actual: '4h', delay: 0 },
-        { id: 'T-052', title: 'Conduct Q1 Performance Reviews', from: 'Rajesh Mehta (CEO)', type: 'HR', priority: 'Medium', status: 'To Do', due: 'Mar 01', est: '10h', actual: '—', delay: 0 },
-        { id: 'T-053', title: 'Onboarding New Developers', from: 'Rajesh Mehta (CEO)', type: 'HR', priority: 'High', status: 'Done', due: 'Feb 15', est: '4h', actual: '3h', delay: 0 },
-    ],
-    PM: [
-        { id: 'T-101', title: 'Finalize Q2 Sprint Roadmap', from: 'Rajesh Mehta (CEO)', type: 'Planning', priority: 'High', status: 'In Progress', due: 'Feb 22', est: '8h', actual: '5h', delay: 0 },
-        { id: 'T-102', title: 'Prepare Board Presentation', from: 'Rajesh Mehta (CEO)', type: 'Report', priority: 'Critical', status: 'To Do', due: 'Feb 25', est: '6h', actual: '—', delay: 0 },
-        { id: 'T-103', title: 'Review Resource Allocation', from: 'Rajesh Mehta (CEO)', type: 'Planning', priority: 'Medium', status: 'Done', due: 'Feb 18', est: '4h', actual: '4h', delay: 0 },
-    ],
-    LEAD: [
-        { id: 'T-201', title: 'Sprint Alpha – Feature Development', from: 'Arjun Patel (PM)', type: 'Dev', priority: 'High', status: 'In Progress', due: 'Feb 20', est: '12h', actual: '10h', delay: 2 },
-        { id: 'T-202', title: 'Code Review Standards Update', from: 'Arjun Patel (PM)', type: 'Process', priority: 'Medium', status: 'To Do', due: 'Feb 23', est: '4h', actual: '—', delay: 0 },
-        { id: 'T-203', title: 'Team Performance Assessment', from: 'Arjun Patel (PM)', type: 'HR', priority: 'Low', status: 'In Progress', due: 'Feb 28', est: '5h', actual: '3h', delay: 0 },
-        { id: 'T-204', title: 'Sprint Beta Planning Session', from: 'Arjun Patel (PM)', type: 'Planning', priority: 'High', status: 'Done', due: 'Feb 18', est: '3h', actual: '3h', delay: 0 },
-    ],
-    DEVELOPER: [
-        { id: 'T-301', title: 'Implement OAuth2 Login Flow', from: 'Sneha Iyer (Scrum Master)', type: 'Dev', priority: 'High', status: 'In Progress', due: 'Feb 19', est: '8h', actual: '6h', delay: 3 },
-        { id: 'T-302', title: 'Write Unit Tests for Payments', from: 'Sneha Iyer (Scrum Master)', type: 'QA', priority: 'Medium', status: 'To Do', due: 'Feb 21', est: '6h', actual: '—', delay: 0 },
-        { id: 'T-303', title: 'Fix Pagination Bug on Dashboard', from: 'Sneha Iyer (Scrum Master)', type: 'Bug', priority: 'Low', status: 'Done', due: 'Feb 17', est: '2h', actual: '1.5h', delay: 0 },
-        { id: 'T-304', title: 'API Documentation Update', from: 'Sneha Iyer (Scrum Master)', type: 'Doc', priority: 'Medium', status: 'In Review', due: 'Feb 22', est: '3h', actual: '3h', delay: 0 },
-    ],
-    DEVOPS: [
-        { id: 'T-401', title: 'Set Up CI/CD for Sprint Beta', from: 'Sneha Iyer (Scrum Master)', type: 'DevOps', priority: 'High', status: 'In Progress', due: 'Feb 20', est: '10h', actual: '8h', delay: 4 },
-        { id: 'T-402', title: 'Configure Monitoring Alerts', from: 'Sneha Iyer (Scrum Master)', type: 'DevOps', priority: 'Medium', status: 'To Do', due: 'Feb 22', est: '4h', actual: '—', delay: 0 },
-        { id: 'T-403', title: 'Container Security Audit', from: 'Sneha Iyer (Scrum Master)', type: 'Security', priority: 'High', status: 'In Review', due: 'Feb 21', est: '6h', actual: '6h', delay: 0 },
-    ],
-    QA: [
-        { id: 'T-601', title: 'Write Regression Tests for Auth Module', from: 'Sneha Iyer (Scrum Master)', type: 'QA', priority: 'High', status: 'In Progress', due: 'Feb 21', est: '8h', actual: '5h', delay: 0 },
-        { id: 'T-602', title: 'Validate Sprint Alpha Release', from: 'Sneha Iyer (Scrum Master)', type: 'QA', priority: 'Medium', status: 'To Do', due: 'Feb 24', est: '6h', actual: '—', delay: 0 },
-        { id: 'T-603', title: 'Performance Testing – API Endpoints', from: 'Sneha Iyer (Scrum Master)', type: 'QA', priority: 'High', status: 'Done', due: 'Feb 18', est: '5h', actual: '5h', delay: 0 },
-        { id: 'T-604', title: 'Bug Report for Payment Module', from: 'Sneha Iyer (Scrum Master)', type: 'Bug', priority: 'Low', status: 'In Review', due: 'Feb 20', est: '2h', actual: '2h', delay: 0 },
-    ],
-};
-
-const ASSIGNED_BY_ME = {
-    CEO: [
-        { id: 'T-051', title: 'Update Company Leave Policy', to: 'Priya Sharma (HR)', type: 'Policy', priority: 'High', status: 'In Progress', due: 'Feb 22', est: '6h', actual: '4h', delay: 0 },
-        { id: 'T-101', title: 'Finalize Q2 Sprint Roadmap', to: 'Arjun Patel (PM)', type: 'Planning', priority: 'High', status: 'In Progress', due: 'Feb 22', est: '8h', actual: '5h', delay: 0 },
-        { id: 'T-102', title: 'Prepare Board Presentation', to: 'Arjun Patel (PM)', type: 'Report', priority: 'Critical', status: 'To Do', due: 'Feb 25', est: '6h', actual: '—', delay: 0 },
-        { id: 'T-103', title: 'Review Resource Allocation', to: 'Arjun Patel (PM)', type: 'Planning', priority: 'Medium', status: 'Done', due: 'Feb 18', est: '4h', actual: '4h', delay: 0 },
-    ],
-    HR: [
-        { id: 'T-H01', title: 'Coordinate Team Building Event', to: 'Sneha Iyer (Scrum Master)', type: 'Event', priority: 'Low', status: 'To Do', due: 'Mar 05', est: '4h', actual: '—', delay: 0 },
-        { id: 'T-H02', title: 'Update Onboarding Documents', to: 'Vikram Singh (Developer)', type: 'Doc', priority: 'Medium', status: 'In Progress', due: 'Feb 26', est: '5h', actual: '3h', delay: 0 },
-    ],
-    PM: [
-        { id: 'T-201', title: 'Sprint Alpha – Feature Development', to: 'Sneha Iyer (Scrum Master)', type: 'Dev', priority: 'High', status: 'In Progress', due: 'Feb 20', est: '12h', actual: '10h', delay: 2 },
-        { id: 'T-202', title: 'Code Review Standards Update', to: 'Sneha Iyer (Scrum Master)', type: 'Process', priority: 'Medium', status: 'To Do', due: 'Feb 23', est: '4h', actual: '—', delay: 0 },
-        { id: 'T-203', title: 'Team Performance Assessment', to: 'Sneha Iyer (Scrum Master)', type: 'HR', priority: 'Low', status: 'In Progress', due: 'Feb 28', est: '5h', actual: '3h', delay: 0 },
-    ],
-    LEAD: [
-        { id: 'T-301', title: 'Implement OAuth2 Login Flow', to: 'Vikram Singh (Developer)', type: 'Dev', priority: 'High', status: 'In Progress', due: 'Feb 19', est: '8h', actual: '6h', delay: 3 },
-        { id: 'T-302', title: 'Write Unit Tests for Payments', to: 'Vikram Singh (Developer)', type: 'QA', priority: 'Medium', status: 'To Do', due: 'Feb 21', est: '6h', actual: '—', delay: 0 },
-        { id: 'T-401', title: 'Set Up CI/CD for Sprint Beta', to: 'Ananya Reddy (DevOps)', type: 'DevOps', priority: 'High', status: 'In Progress', due: 'Feb 20', est: '10h', actual: '8h', delay: 4 },
-        { id: 'T-601', title: 'Write Regression Tests for Auth Module', to: 'Divya Menon (QA)', type: 'QA', priority: 'High', status: 'In Progress', due: 'Feb 21', est: '8h', actual: '5h', delay: 0 },
-    ],
-};
 
 const statusCols = ['To Do', 'In Progress', 'In Review', 'Done'];
 const statusColors = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#f59e0b', Done: '#10b981' };
@@ -94,8 +34,29 @@ export default function TaskManagement() {
     const [view, setView] = useState('board');
 
     /* Assigned to me state (mutable for status changes) */
-    const [assignedTasks, setAssignedTasks] = useState(ASSIGNED_TO_ME[role] || []);
-    const [assigningTasks, setAssigningTasks] = useState(ASSIGNED_BY_ME[role] || []);
+    const [assignedTasks, setAssignedTasks] = useState([]);
+    const [assigningTasks, setAssigningTasks] = useState([]);
+
+    /* Load tasks from database */
+    useEffect(() => {
+        tasksAPI.getAll().then(dbTasks => {
+            if (!dbTasks?.length) return;
+            const userName = user?.name || '';
+            const userRole = role || '';
+            // Tasks assigned TO this user (by name or role)
+            const toMe = dbTasks.filter(t =>
+                t.assignedToRole === userRole ||
+                (t.to && t.to.includes(userName))
+            );
+            // Tasks assigned BY this user
+            const byMe = dbTasks.filter(t =>
+                t.assignedBy === userName ||
+                t.assignedByRole === userRole
+            );
+            if (toMe.length) setAssignedTasks(toMe);
+            if (byMe.length) setAssigningTasks(byMe);
+        }).catch(() => { });
+    }, [role, user?.name]);
 
     /* Filters */
     const [statusFilter, setStatusFilter] = useState('All');
@@ -111,7 +72,7 @@ export default function TaskManagement() {
 
     /* Members of the currently selected assignee role */
     const membersForRole = newAssignTo
-        ? employees.filter(e => e.role === ROLE_DISPLAY_NAMES[newAssignTo])
+        ? localEmployees.filter(e => e.role === ROLE_DISPLAY_NAMES[newAssignTo])
         : [];
 
     const handleNewTask = (e) => {
@@ -122,6 +83,11 @@ export default function TaskManagement() {
             id: `T-${Date.now().toString().slice(-4)}`,
             title: newTitle,
             to: label,
+            from: `${user?.name || 'Unknown'} (${ROLE_DISPLAY_NAMES[role] || role})`,
+            assignedBy: user?.name || '',
+            assignedByRole: role,
+            assignedToRole: newAssignTo,
+            assignedToName: newAssignName || '',
             type: 'Task',
             priority: newPriority,
             status: 'To Do',

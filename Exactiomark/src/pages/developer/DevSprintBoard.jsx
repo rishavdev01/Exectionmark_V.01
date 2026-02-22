@@ -32,12 +32,7 @@ const reviewBadge = {
 };
 
 export default function DevSprintBoard() {
-    const [cards, setCards] = useState([
-        { id: 'ST-201', title: 'Implement OAuth2 Login Flow', points: 8, alignment: 91, reviewer: 'Sneha Iyer', reviewStatus: 'Approved', risk: 'Low', module: 'Auth Service', status: 'In Progress' },
-        { id: 'ST-202', title: 'Write Unit Tests for Payments', points: 5, alignment: 78, reviewer: 'Karan Joshi', reviewStatus: 'Pending', risk: 'Medium', module: 'Payment Gateway', status: 'To Do' },
-        { id: 'ST-203', title: 'Refactor Notification Service', points: 3, alignment: 85, reviewer: 'Vikram Singh', reviewStatus: 'Approved', risk: 'Low', module: 'Notifications', status: 'In Review' },
-        { id: 'ST-204', title: 'Fix Pagination on Dashboard', points: 2, alignment: 96, reviewer: 'Sneha Iyer', reviewStatus: 'Approved', risk: 'Low', module: 'Frontend UI', status: 'Done' },
-    ]);
+    const [cards, setCards] = useState([]);
     const [dragId, setDragId] = useState(null);
 
     useEffect(() => {

@@ -38,9 +38,6 @@ task_activities_collection = db["task_activities"]
 # ── Teams (used by meeting_insights agent) ──
 teams_collection = db["teams"]
 
-# ── UserLogin ──
-user_logins_collection = db["user_logins"]
-
 # ── CEO Collections ──
 execution_weeks_collection        = db["execution_weeks"]
 sprint_status_slices_collection   = db["sprint_status_slices"]

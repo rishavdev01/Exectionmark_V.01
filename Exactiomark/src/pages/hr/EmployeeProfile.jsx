@@ -35,7 +35,7 @@ export default function EmployeeProfile() {
     const [emp, setEmp] = useState(() => getEmployee(id));
 
     useEffect(() => {
-        employeesAPI.getById(Number(id)).then(setEmp).catch(() => setEmp(getEmployee(id)));
+        employeesAPI.getById(id).then(setEmp).catch(() => setEmp(getEmployee(id)));
     }, [id]);
 
     if (!emp) {

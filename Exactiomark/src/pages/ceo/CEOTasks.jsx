@@ -5,20 +5,12 @@ import { ClipboardList, Send, CheckCircle, Clock, AlertCircle, Plus, X } from 'l
 import { ROLE_CAN_ASSIGN_TO, ROLE_DISPLAY_NAMES } from '../../data/roleHierarchy';
 import { tasksAPI } from '../../services/api';
 
-const initialTasks = [
-    { id: 'CEO-T01', title: 'Finalize Q2 Sprint Roadmap', description: 'Review and approve the product roadmap for Q2 sprints.', assignedTo: 'Arjun Patel (Project Manager)', priority: 'High', status: 'In Progress', due: 'Feb 22, 2026' },
-    { id: 'CEO-T02', title: 'Prepare Board Presentation', description: 'Create executive summary for board meeting on company growth metrics.', assignedTo: 'Arjun Patel (Project Manager)', priority: 'Critical', status: 'To Do', due: 'Feb 25, 2026' },
-    { id: 'CEO-T03', title: 'Review Resource Allocation', description: 'Analyze team utilization and approve reallocations as needed.', assignedTo: 'Arjun Patel (Project Manager)', priority: 'Medium', status: 'Done', due: 'Feb 18, 2026' },
-    { id: 'CEO-T04', title: 'Update Company Leave Policy', description: 'Revise and modernize the employee leave policy document.', assignedTo: 'Priya Sharma (HR Manager)', priority: 'High', status: 'In Progress', due: 'Feb 22, 2026' },
-    { id: 'CEO-T05', title: 'Conduct Q1 Performance Reviews', description: 'Oversee the quarterly performance review cycle.', assignedTo: 'Priya Sharma (HR Manager)', priority: 'Medium', status: 'To Do', due: 'Mar 01, 2026' },
-    { id: 'CEO-T06', title: 'Sprint Alpha Feature Review', description: 'Review all Sprint Alpha deliverables with the Scrum Master.', assignedTo: 'Sneha Iyer (Scrum Master)', priority: 'High', status: 'In Progress', due: 'Feb 20, 2026' },
-];
 
 const priorityColors = { Low: '#6b7280', Medium: '#3b82f6', High: '#f59e0b', Critical: '#ef4444' };
 const statusColors = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', Done: '#10b981' };
 
 export default function CEOTasks() {
-    const [tasks, setTasks] = useState(initialTasks);
+    const [tasks, setTasks] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [newTask, setNewTask] = useState({ title: '', description: '', assignRole: '', priority: 'Medium' });
     const [filter, setFilter] = useState('All');

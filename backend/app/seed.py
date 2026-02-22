@@ -36,7 +36,7 @@ async def seed():
     # ═══════════════════════════════════════════════════════════════
     employees = [
         {
-            "id": 1, "name": "Vikram Singh", "role": "Developer", "dept": "Engineering", "avatar": "VS",
+            "id": "EMPDEV001", "name": "Vikram Singh", "role": "Developer", "dept": "Engineering", "avatar": "VS",
             "email": "vikram.singh@exactiomark.com", "phone": "+91 98765 43210",
             "projects": ["Sprint Alpha", "Sprint Beta"], "status": "Active",
             "perfScore": 89.2, "behaviour": 8.5, "risk": "Low", "sprintContrib": "24 SP",
@@ -56,7 +56,7 @@ async def seed():
             "sprintTasks": 8, "workload": 72,
         },
         {
-            "id": 2, "name": "Sneha Iyer", "role": "Scrum Master", "dept": "Engineering", "avatar": "SI",
+            "id": "EMPLEAD001", "name": "Sneha Iyer", "role": "Scrum Master", "dept": "Engineering", "avatar": "SI",
             "email": "sneha.iyer@exactiomark.com", "phone": "+91 98765 43211",
             "projects": ["Sprint Alpha"], "status": "Active",
             "perfScore": 86.8, "behaviour": 9.0, "risk": "Low", "sprintContrib": "18 SP",
@@ -76,7 +76,7 @@ async def seed():
             "sprintTasks": 5, "workload": 65,
         },
         {
-            "id": 3, "name": "Ananya Reddy", "role": "DevOps Engineer", "dept": "Infrastructure", "avatar": "AR",
+            "id": "OPS001", "name": "Ananya Reddy", "role": "DevOps Engineer", "dept": "Infrastructure", "avatar": "AR",
             "email": "ananya.reddy@exactiomark.com", "phone": "+91 98765 43212",
             "projects": ["Sprint Alpha", "Sprint Gamma"], "status": "Active",
             "perfScore": 74.3, "behaviour": 7.5, "risk": "High", "sprintContrib": "21 SP",
@@ -96,7 +96,7 @@ async def seed():
             "sprintTasks": 7, "workload": 92,
         },
         {
-            "id": 4, "name": "Arjun Patel", "role": "Sprint Master", "dept": "Management", "avatar": "AP",
+            "id": "PM001", "name": "Arjun Patel", "role": "Sprint Master", "dept": "Management", "avatar": "AP",
             "email": "arjun.patel@exactiomark.com", "phone": "+91 98765 43213",
             "projects": ["Sprint Alpha"], "status": "Active",
             "perfScore": 85.5, "behaviour": 8.8, "risk": "Low", "sprintContrib": "—",
@@ -116,7 +116,7 @@ async def seed():
             "sprintTasks": 0, "workload": 55,
         },
         {
-            "id": 5, "name": "Priya Sharma", "role": "HR Manager", "dept": "Human Resources", "avatar": "PS",
+            "id": "EMPHR001", "name": "Priya Sharma", "role": "HR Manager", "dept": "Human Resources", "avatar": "PS",
             "email": "priya.sharma@exactiomark.com", "phone": "+91 98765 43214",
             "projects": ["—"], "status": "Active",
             "perfScore": 88.1, "behaviour": 9.2, "risk": "Low", "sprintContrib": "—",
@@ -136,7 +136,7 @@ async def seed():
             "sprintTasks": 0, "workload": 50,
         },
         {
-            "id": 6, "name": "Rahul Verma", "role": "Developer", "dept": "Engineering", "avatar": "RV",
+            "id": "EMPDEV002", "name": "Rahul Verma", "role": "Developer", "dept": "Engineering", "avatar": "RV",
             "email": "rahul.verma@exactiomark.com", "phone": "+91 98765 43215",
             "projects": ["Sprint Beta"], "status": "Probation",
             "perfScore": 72.1, "behaviour": 6.8, "risk": "Medium", "sprintContrib": "14 SP",
@@ -156,7 +156,7 @@ async def seed():
             "sprintTasks": 6, "workload": 58,
         },
         {
-            "id": 7, "name": "Meera Nair", "role": "QA Engineer", "dept": "Quality", "avatar": "MN",
+            "id": "EMPQA001", "name": "Meera Nair", "role": "QA Engineer", "dept": "Quality", "avatar": "MN",
             "email": "meera.nair@exactiomark.com", "phone": "+91 98765 43216",
             "projects": ["Sprint Alpha"], "status": "Active",
             "perfScore": 81.4, "behaviour": 8.0, "risk": "Low", "sprintContrib": "16 SP",
@@ -176,7 +176,7 @@ async def seed():
             "sprintTasks": 4, "workload": 60,
         },
         {
-            "id": 8, "name": "Karan Joshi", "role": "Developer", "dept": "Engineering", "avatar": "KJ",
+            "id": "EMPDEV003", "name": "Karan Joshi", "role": "Developer", "dept": "Engineering", "avatar": "KJ",
             "email": "karan.joshi@exactiomark.com", "phone": "+91 98765 43217",
             "projects": ["Sprint Gamma"], "status": "On Leave",
             "perfScore": 68.5, "behaviour": 7.2, "risk": "High", "sprintContrib": "10 SP",

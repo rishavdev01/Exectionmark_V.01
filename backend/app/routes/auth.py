@@ -26,7 +26,13 @@ class LoginResponse(BaseModel):
 
 @router.post("/login", response_model=LoginResponse)
 async def login(body: LoginRequest):
-    user = await users_collection.find_one({"email": body.email})
+    # Try to find by email or Employee ID
+    user = await users_collection.find_one({
+        "$or": [
+            {"email": body.email},
+            {"id": body.email}  # body.email is used as a generic identifier here
+        ]
+    })
     if not user or user.get("password") != body.password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     return LoginResponse(

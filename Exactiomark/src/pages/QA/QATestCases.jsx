@@ -4,14 +4,6 @@ import StatsCard from '../../components/StatsCard';
 import { FlaskConical, CheckCircle, Clock, XCircle, Plus, X, ChevronDown } from 'lucide-react';
 import { qaAPI } from '../../services/api';
 
-const initialCases = [
-    { id: 'TC-001', title: 'Verify Login with Valid Credentials', story: 'User Login Flow Redesign', type: 'Functional', priority: 'High', status: 'Passed', steps: 4, updatedAt: 'Feb 20' },
-    { id: 'TC-002', title: 'Login with Invalid Password', story: 'User Login Flow Redesign', type: 'Negative', priority: 'High', status: 'Failed', steps: 3, updatedAt: 'Feb 20' },
-    { id: 'TC-003', title: 'Payment Stripe Integration', story: 'Payment Gateway Integration', type: 'Integration', priority: 'Critical', status: 'Passed', steps: 6, updatedAt: 'Feb 19' },
-    { id: 'TC-004', title: 'Dashboard Load Time < 2s', story: 'Dashboard Performance Fix', type: 'Performance', priority: 'Medium', status: 'In Progress', steps: 3, updatedAt: 'Feb 21' },
-    { id: 'TC-005', title: 'Email Unsubscribe Link', story: 'Email Notification Service', type: 'Functional', priority: 'Medium', status: 'Pending', steps: 2, updatedAt: 'Feb 21' },
-    { id: 'TC-006', title: 'Profile Avatar Upload Limit', story: 'User Profile Update API', type: 'Boundary', priority: 'Low', status: 'Pending', steps: 3, updatedAt: 'Feb 22' },
-];
 
 const statusCfg = {
     Passed: { bg: '#ecfdf5', color: '#10b981' },
@@ -38,11 +30,7 @@ const STORIES = [
 const empty = { title: '', story: '', type: 'Functional', priority: 'Medium', status: 'Pending', steps: 1 };
 
 export default function QATestCases() {
-    const [cases, setCases] = useState([
-        { id: 'TC-001', title: 'Verify Login with Valid Credentials', story: 'User Login Flow Redesign', type: 'Functional', priority: 'High', status: 'Passed', steps: 4, updatedAt: 'Feb 20' },
-        { id: 'TC-002', title: 'Login with Invalid Password', story: 'User Login Flow Redesign', type: 'Negative', priority: 'High', status: 'Failed', steps: 3, updatedAt: 'Feb 20' },
-        { id: 'TC-003', title: 'Payment Stripe Integration', story: 'Payment Gateway Integration', type: 'Integration', priority: 'Critical', status: 'Passed', steps: 6, updatedAt: 'Feb 19' },
-    ]);
+    const [cases, setCases] = useState([]);
     const [filter, setFilter] = useState('All');
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(empty);
@@ -74,6 +62,7 @@ export default function QATestCases() {
             updatedAt: 'Today',
         };
         setCases(prev => [newCase, ...prev]);
+        qaAPI.createTestCase(newCase).catch(err => console.error('Failed to create test case:', err));
         setForm(empty);
         setErrors({});
         setShowModal(false);

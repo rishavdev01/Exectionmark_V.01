@@ -48,8 +48,9 @@ async def get_candidates(status: Optional[str] = Query(None), role: Optional[str
 
 
 @router.post("/candidates", response_model=dict)
-async def create_candidate(body: Candidate):
-    await candidates_collection.insert_one(body.model_dump())
+async def create_candidate(body: dict):
+    body.pop("_id", None)
+    await candidates_collection.insert_one(body)
     return {"message": "Candidate added"}
 
 

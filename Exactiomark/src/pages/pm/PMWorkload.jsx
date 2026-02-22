@@ -5,17 +5,9 @@ import { BarChart3, Users, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-r
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { pmAPI } from '../../services/api';
 
-const fallbackWorkload = [
-    { name: 'Vikram Singh', assigned: 8, completed: 6, pending: 1, overdue: 1, capacity: 72 },
-    { name: 'Sneha Iyer', assigned: 5, completed: 4, pending: 1, overdue: 0, capacity: 65 },
-    { name: 'Ananya Reddy', assigned: 9, completed: 4, pending: 2, overdue: 3, capacity: 92 },
-    { name: 'Rahul Verma', assigned: 6, completed: 3, pending: 2, overdue: 1, capacity: 58 },
-    { name: 'Meera Nair', assigned: 4, completed: 3, pending: 1, overdue: 0, capacity: 60 },
-    { name: 'Karan Joshi', assigned: 3, completed: 1, pending: 1, overdue: 1, capacity: 45 },
-];
 
 export default function PMWorkload() {
-    const [workloadData, setWorkloadData] = useState(fallbackWorkload);
+    const [workloadData, setWorkloadData] = useState([]);
     const [redistributed, setRedistributed] = useState({});
 
     useEffect(() => {

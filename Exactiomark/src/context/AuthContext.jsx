@@ -12,7 +12,9 @@ const MOCK_USERS = [
     { id: 'HR001', password: 'hr@123', name: 'Priya Sharma', role: 'HR', email: 'priya@exactiomark.com', department: 'Human Resources', avatar: 'PS' },
     { id: 'PM001', password: 'pm@123', name: 'Arjun Patel', role: 'PM', email: 'arjun@exactiomark.com', department: 'Sprint Mgmt', avatar: 'AP' },
     { id: 'LEAD001', password: 'lead@123', name: 'Sneha Iyer', role: 'LEAD', email: 'sneha@exactiomark.com', department: 'Engineering', avatar: 'SI' },
+    { id: 'EMPLEAD001', password: 'emplead@123', name: 'Sneha Iyer', role: 'LEAD', email: 'sneha@exactiomark.com', department: 'Engineering', avatar: 'SI' },
     { id: 'DEV001', password: 'dev@123', name: 'Vikram Singh', role: 'DEVELOPER', email: 'vikram@exactiomark.com', department: 'Engineering', avatar: 'VS' },
+    { id: 'EMPDEV001', password: 'empdev@123', name: 'Vikram Singh', role: 'DEVELOPER', email: 'vikram@exactiomark.com', department: 'Engineering', avatar: 'VS' },
     { id: 'OPS001', password: 'ops@123', name: 'Ananya Reddy', role: 'DEVOPS', email: 'ananya@exactiomark.com', department: 'Infrastructure', avatar: 'AR' },
     { id: 'QA001', password: 'qa@123', name: 'Divya Menon', role: 'QA', email: 'divya@exactiomark.com', department: 'Quality Assurance', avatar: 'DM' },
 ];
@@ -31,13 +33,15 @@ export function AuthProvider({ children }) {
 
         /* Step 2 – try backend API first */
         try {
-            // Find the email from mock users to match the userId
+            // Check if we have an email mapping in mock users
             const mockUser = MOCK_USERS.find(
                 u => u.id.toLowerCase() === userId.trim().toLowerCase()
             );
-            if (!mockUser) return { success: false, error: 'Invalid User ID or personal password.' };
 
-            const data = await authAPI.login(mockUser.email, personalPwd);
+            // If no mockUser mapping, use the userId itself (it might be an email or an Employee ID)
+            const identifier = mockUser ? mockUser.email : userId.trim();
+
+            const data = await authAPI.login(identifier, personalPwd);
             if (data && data.name) {
                 const safeUser = { ...data };
                 delete safeUser.password;
@@ -46,7 +50,10 @@ export function AuthProvider({ children }) {
                 return { success: true, user: safeUser };
             }
             return { success: false, error: 'Invalid credentials.' };
-        } catch {
+        } catch (err) {
+            // Only fallback to mock if it's a network error or explicitly requested (optional)
+            console.warn('Backend login failed, falling back to MOCK_USERS:', err.message);
+
             /* Fallback to local mock if backend is down */
             const found = MOCK_USERS.find(
                 u => u.id.toLowerCase() === userId.trim().toLowerCase() && u.password === personalPwd

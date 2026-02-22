@@ -3,25 +3,12 @@ Projects route — CRUD (maps to CEOProjects.jsx)
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Optional, List
 
 from app.database import projects_collection
 
 router = APIRouter()
 
 
-class ProjectCreate(BaseModel):
-    id: str
-    name: str
-    budget: str = ""
-    burnRate: str = ""
-    status: str = "Active"
-    lead: str = ""
-    team: List[str] = []
-    timeline: str = ""
-    completion: int = 0
-    health: str = "Healthy"
 
 
 @router.get("")
@@ -41,8 +28,9 @@ async def get_project(project_id: str):
 
 
 @router.post("")
-async def create_project(body: ProjectCreate):
-    await projects_collection.insert_one(body.model_dump())
+async def create_project(body: dict):
+    body.pop("_id", None)
+    await projects_collection.insert_one(body)
     return {"message": "Project created"}
 
 

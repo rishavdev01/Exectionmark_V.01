@@ -186,15 +186,6 @@ export const aiAPI = {
     },
 };
 
-/* ── User Logins ── */
-export const userLoginsAPI = {
-    getAll: () => request('/user-logins'),
-    getByEmployeeId: (empId) => request(`/user-logins/${empId}`),
-    create: (data) => request('/user-logins', { method: 'POST', body: JSON.stringify(data) }),
-    update: (empId, data) =>
-        request(`/user-logins/${empId}`, { method: 'PUT', body: JSON.stringify(data) }),
-};
-
 /* ── CEO API ── */
 export const ceoAPI = {
     // CEODashboard.jsx

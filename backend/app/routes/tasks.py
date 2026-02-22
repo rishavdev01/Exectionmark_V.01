@@ -71,8 +71,9 @@ async def get_task(task_id: str):
 
 
 @router.post("")
-async def create_task(body: TaskCreate):
-    await tasks_collection.insert_one(body.model_dump())
+async def create_task(body: dict):
+    body.pop("_id", None)
+    await tasks_collection.insert_one(body)
     return {"message": "Task created"}
 
 

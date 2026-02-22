@@ -9,20 +9,10 @@ const availableRoles = ['Project Manager', 'Scrum Master', 'Developer', 'DevOps 
 const departments = ['Engineering', 'Operations', 'Quality', 'Human Resources', 'Management'];
 const projects = ['Sprint Alpha', 'Sprint Beta', 'Sprint Gamma', 'Sprint Delta'];
 
-const initialCandidates = [
-    { id: 1, name: 'Dev Kumar', email: 'dev.kumar@gmail.com', role: 'Developer', dept: 'Engineering', project: 'Sprint Beta', appliedDate: 'Feb 10, 2026', status: 'Hired', experience: '4 years' },
-    { id: 2, name: 'Preethi Singh', email: 'preethi.s@gmail.com', role: 'QA Engineer', dept: 'Quality', project: 'Sprint Alpha', appliedDate: 'Feb 14, 2026', status: 'Interview', experience: '3 years' },
-    { id: 3, name: 'Rakesh Agarwal', email: 'rakesh.a@outlook.com', role: 'DevOps Engineer', dept: 'Operations', project: 'Sprint Gamma', appliedDate: 'Feb 8, 2026', status: 'Offer Sent', experience: '5 years' },
-    { id: 4, name: 'Deepika Nair', email: 'deepika.n@yahoo.com', role: 'Scrum Master', dept: 'Engineering', project: 'Sprint Delta', appliedDate: 'Feb 16, 2026', status: 'Interview', experience: '6 years' },
-    { id: 5, name: 'Arun Gupta', email: 'arun.g@gmail.com', role: 'Project Manager', dept: 'Management', project: 'Sprint Beta', appliedDate: 'Feb 8, 2026', status: 'Screening', experience: '8 years' },
-    { id: 6, name: 'Sunita Verma', email: 'sunita.v@hotmail.com', role: 'Developer', dept: 'Engineering', project: 'Sprint Alpha', appliedDate: 'Feb 18, 2026', status: 'Screening', experience: '2 years' },
-    { id: 7, name: 'Manoj Tiwari', email: 'manoj.t@gmail.com', role: 'HR Manager', dept: 'Human Resources', project: '—', appliedDate: 'Feb 11, 2026', status: 'Rejected', experience: '3 years' },
-];
-
 const statusColors = { Screening: '#6b7280', Interview: '#3b82f6', 'Offer Sent': '#f59e0b', Hired: '#10b981', Rejected: '#ef4444' };
 
 export default function HRInvitations() {
-    const [candidates, setCandidates] = useState(initialCandidates);
+    const [candidates, setCandidates] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [roleFilter, setRoleFilter] = useState('All');
     const [statusFilter, setStatusFilter] = useState('All');

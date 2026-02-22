@@ -11,16 +11,8 @@ const alignColor = v => v >= 80 ? '#10b981' : v >= 65 ? '#f59e0b' : '#ef4444';
 const reviewBadge = { Approved: '#10b981', Pending: '#f59e0b', 'In Review': '#3b82f6', Rejected: '#ef4444' };
 const members = ['All', 'Vikram Singh', 'Ananya Reddy', 'Rahul Verma', 'Meera Nair', 'Karan Joshi'];
 
-const FALLBACK_STORIES = [
-    { id: 'ST-101', title: 'Implement Auth Module', assignee: 'Vikram Singh', type: 'Dev', points: 8, alignment: 94, risk: 'Low', reviewStatus: 'Approved', dueDate: 'Feb 20', status: 'Done' },
-    { id: 'ST-102', title: 'Setup CI/CD Pipeline', assignee: 'Ananya Reddy', type: 'DevOps', points: 8, alignment: 78, risk: 'High', reviewStatus: 'Pending', dueDate: 'Feb 22', status: 'In Progress' },
-    { id: 'ST-103', title: 'User Profile API', assignee: 'Vikram Singh', type: 'Dev', points: 5, alignment: 88, risk: 'Low', reviewStatus: 'In Review', dueDate: 'Feb 21', status: 'In Review' },
-    { id: 'ST-104', title: 'Dashboard UI Redesign', assignee: 'Rahul Verma', type: 'Dev', points: 8, alignment: 65, risk: 'High', reviewStatus: 'Pending', dueDate: 'Feb 23', status: 'In Progress' },
-    { id: 'ST-107', title: 'Notification Service', assignee: 'Karan Joshi', type: 'Dev', points: 8, alignment: 58, risk: 'High', reviewStatus: 'Rejected', dueDate: 'Feb 28', status: 'Blocked' },
-];
-
 export default function SMSprintBoard() {
-    const [stories, setStories] = useState(FALLBACK_STORIES);
+    const [stories, setStories] = useState([]);
     const [view, setView] = useState('board');
     const [memberFilter, setMemberFilter] = useState('All');
     const [riskFilter, setRiskFilter] = useState('All');

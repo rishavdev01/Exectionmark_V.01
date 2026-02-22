@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import (
     auth, dashboard, bugs,
     ceo, pm, lead, dev, devops, qa, hr,
-    user_logins,
     users, employees, sprints, stories, tasks, projects,
     candidates, pipelines, deployments, system_health,
     alerts, reports, review_queue, escalations, ai_agent,
@@ -30,9 +29,6 @@ app.add_middleware(
 app.include_router(auth.router,         prefix="/api/auth",       tags=["Auth"])
 app.include_router(dashboard.router,    prefix="/api/dashboard",  tags=["Dashboard"])
 app.include_router(bugs.router,         prefix="/api/bugs",       tags=["Bugs"])
-
-# ── UserLogin ──
-app.include_router(user_logins.router,  prefix="/api/user-logins", tags=["UserLogins"])
 
 # ── Feature Routers ──
 app.include_router(users.router,         prefix="/api/users",         tags=["Users"])
@@ -60,6 +56,18 @@ app.include_router(devops.router,       prefix="/api/devops",      tags=["DevOps
 app.include_router(qa.router,           prefix="/api/qa",          tags=["QA"])
 app.include_router(hr.router,           prefix="/api/hr",          tags=["HR"])
 app.include_router(companies.router,    prefix="/api/companies",   tags=["Companies"])
+
+
+# ── Startup: ensure unique indexes ──
+@app.on_event("startup")
+async def create_indexes():
+    from app.database import users_collection, employees_collection
+    # Enforce unique Employee ID and email for users
+    await users_collection.create_index("id", unique=True)
+    await users_collection.create_index("email", unique=True)
+    # Enforce unique employee id as well
+    await employees_collection.create_index("id", unique=True)
+    print("✅ Unique indexes ensured on users.id, users.email, employees.id")
 
 
 @app.get("/")

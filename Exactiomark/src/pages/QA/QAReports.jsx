@@ -12,40 +12,6 @@ const ICON_MAP = {
     Regression: <FlaskConical size={16} />,
 };
 
-const FALLBACK_REPORTS = [
-    {
-        id: 1, name: 'Sprint QA Report', icon: <BarChart2 size={16} />, color: '#3b82f6', category: 'Sprint',
-        description: 'Comprehensive QA summary for the current sprint including test results, bug counts, and quality scores.',
-        lastGenerated: 'Feb 20, 2026', data: [
-            { label: 'Tests Run', value: '271' }, { label: 'Pass Rate', value: '91%' },
-            { label: 'Bugs Found', value: '8' }, { label: 'Quality Score', value: '85%' },
-        ]
-    },
-    {
-        id: 2, name: 'Bug Trend Report', icon: <Bug size={16} />, color: '#ef4444', category: 'Bugs',
-        description: 'Analysis of bug discovery and resolution trends across recent sprints. Highlights repeat defects.',
-        lastGenerated: 'Feb 20, 2026', data: [
-            { label: 'New Bugs', value: '8' }, { label: 'Resolved', value: '14' },
-            { label: 'Reopened', value: '3' }, { label: 'Net Change', value: '-6' },
-        ]
-    },
-    {
-        id: 3, name: 'Release Quality Report', icon: <Shield size={16} />, color: '#10b981', category: 'Release',
-        description: 'Pre-release quality assessment including blocking bugs, regression results, and AI risk verdict.',
-        lastGenerated: 'Feb 19, 2026', data: [
-            { label: 'Risk Level', value: 'Medium' }, { label: 'Blockers', value: '5' },
-            { label: 'Regression Pass', value: '86%' }, { label: 'Coverage', value: '82%' },
-        ]
-    },
-    {
-        id: 4, name: 'Regression Stability Report', icon: <FlaskConical size={16} />, color: '#8b5cf6', category: 'Regression',
-        description: 'Stability analysis of regression suite across sprints with flaky test detection and module-level breakdown.',
-        lastGenerated: 'Feb 20, 2026', data: [
-            { label: 'Total Cases', value: '86' }, { label: 'Pass Rate', value: '86%' },
-            { label: 'Flaky Tests', value: '2' }, { label: 'Stable Modules', value: '4/6' },
-        ]
-    },
-];
 
 const bugTrend = [
     { sprint: 'S8', found: 12, resolved: 10 }, { sprint: 'S9', found: 8, resolved: 12 },
@@ -59,7 +25,7 @@ const qualityTrend = [
 ];
 
 export default function QAReports() {
-    const [reports, setReports] = useState(FALLBACK_REPORTS);
+    const [reports, setReports] = useState([]);
     const [exporting, setExporting] = useState(null);
 
     useEffect(() => {

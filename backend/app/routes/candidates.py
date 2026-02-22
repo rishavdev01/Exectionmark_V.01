@@ -11,18 +11,6 @@ from app.database import candidates_collection
 router = APIRouter()
 
 
-class CandidateCreate(BaseModel):
-    id: int
-    name: str
-    email: str = ""
-    role: str = ""
-    status: str = "Pending"
-    department: str = ""
-    project: str = ""
-    date: str = ""
-    experience: str = ""
-    match: int = 0
-    source: str = ""
 
 
 @router.get("")
@@ -50,8 +38,9 @@ async def get_candidate(candidate_id: int):
 
 
 @router.post("")
-async def create_candidate(body: CandidateCreate):
-    await candidates_collection.insert_one(body.model_dump())
+async def create_candidate(body: dict):
+    body.pop("_id", None)
+    await candidates_collection.insert_one(body)
     return {"message": "Candidate created"}
 
 
