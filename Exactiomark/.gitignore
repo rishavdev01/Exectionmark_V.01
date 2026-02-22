@@ -1,0 +1,82 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Sensitive & Secret Files ──────────────────────────────────────────────────
+
+# Environment variables (may contain API keys, DB URIs, secrets)
+.env
+.env.*
+!.env.example
+*.env.local
+*.env.development
+*.env.production
+*.env.staging
+*.env.test
+
+# GitHub Personal Access Tokens / API keys stored locally
+.pat
+.github_pat
+*.pat.txt
+secrets.json
+secrets.yaml
+secrets.yml
+
+# Authentication & session data
+auth.json
+session.json
+sessions/
+*.session
+
+# Private keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+private/
+certs/
+
+# Firebase / Supabase / cloud credentials
+firebase-adminsdk*.json
+serviceAccountKey.json
+google-credentials.json
+*-credentials.json
+*-service-account.json
+
+# Local config overrides (may contain real credentials)
+config.local.js
+config.local.ts
+config.local.json
+*.override.json
+
+# Build output with injected secrets
+build/
+
+# OS-generated junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
