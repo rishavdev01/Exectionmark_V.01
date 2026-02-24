@@ -4,7 +4,7 @@ import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
 import { Users, Search, UserCheck, AlertTriangle, TrendingUp } from 'lucide-react';
 import { employeesAPI } from '../../services/api';
-import { employees as localEmployees } from '../../data/employeeData';
+
 
 const riskColors = { Low: '#10b981', Medium: '#f59e0b', High: '#ef4444' };
 const statusColors = { Active: '#10b981', 'On Leave': '#3b82f6', Probation: '#f59e0b' };
@@ -14,10 +14,12 @@ export default function HREmployees() {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [deptFilter, setDeptFilter] = useState('All');
-    const [employees, setEmployees] = useState(localEmployees);
+    const [employees, setEmployees] = useState([]);
 
     useEffect(() => {
-        employeesAPI.getAll().then(setEmployees).catch(() => setEmployees(localEmployees));
+        employeesAPI.getAll()
+            .then(data => setEmployees(Array.isArray(data) ? data : []))
+            .catch(() => { });
     }, []);
 
     const depts = ['All', ...new Set(employees.map(e => e.dept))];

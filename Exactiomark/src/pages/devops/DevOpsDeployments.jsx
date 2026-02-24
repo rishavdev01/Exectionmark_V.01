@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
-import { UploadCloud, CheckCircle, XCircle, RotateCcw, Clock, Activity, AlertTriangle } from 'lucide-react';
+import { UploadCloud, CheckCircle, XCircle, RotateCcw, Clock, Activity, AlertTriangle, Cpu } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { devopsAPI, deploymentsAPI } from '../../services/api';
 import ConfirmToast from '../../components/ConfirmToast';
-
-const deployments = [
-    { id: 1, service: 'alpha-backend', env: 'Production', version: 'v2.4.1', status: 'Stable', deployedAt: 'Feb 20, 08:15 AM', deployedBy: 'Vikram Singh', canRollback: true },
-    { id: 2, service: 'gamma-frontend', env: 'Staging', version: 'v1.8.0', status: 'Stable', deployedAt: 'Feb 19, 04:30 PM', deployedBy: 'Rahul Verma', canRollback: true },
-    { id: 3, service: 'beta-service', env: 'Production', version: 'v3.1.0', status: 'Failed', deployedAt: 'Feb 19, 02:00 PM', deployedBy: 'Ananya Reddy', canRollback: false },
-    { id: 4, service: 'auth-service', env: 'Production', version: 'v1.2.3', status: 'Stable', deployedAt: 'Feb 18, 11:00 AM', deployedBy: 'Karan Joshi', canRollback: true },
-    { id: 5, service: 'beta-service', env: 'Staging', version: 'v3.0.9', status: 'Warning', deployedAt: 'Feb 18, 09:45 AM', deployedBy: 'Ananya Reddy', canRollback: true },
-    { id: 6, service: 'notification-svc', env: 'Production', version: 'v2.0.0', status: 'Rolled Back', deployedAt: 'Feb 17, 03:20 PM', deployedBy: 'Meera Nair', canRollback: false },
-];
 
 const deployFrequency = [
     { day: 'Mon', deploys: 3 }, { day: 'Tue', deploys: 5 }, { day: 'Wed', deploys: 2 },
@@ -28,14 +19,15 @@ const statusConfig = {
 };
 
 export default function DevOpsDeployments() {
-    const [data, setData] = useState([
-        { id: 1, service: 'alpha-backend', env: 'Production', version: 'v2.4.1', status: 'Stable', deployedAt: 'Feb 20, 08:15 AM', deployedBy: 'Vikram Singh', canRollback: true },
-        { id: 2, service: 'gamma-frontend', env: 'Staging', version: 'v1.8.0', status: 'Stable', deployedAt: 'Feb 19, 04:30 PM', deployedBy: 'Rahul Verma', canRollback: true },
-        { id: 3, service: 'beta-service', env: 'Production', version: 'v3.1.0', status: 'Failed', deployedAt: 'Feb 19, 02:00 PM', deployedBy: 'Ananya Reddy', canRollback: false },
-    ]);
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        devopsAPI.deployments().then(d => { if (d?.length) setData(d); }).catch(() => { });
+        devopsAPI.deployments().then(d => {
+            if (d?.length) setData(d);
+        }).catch(() => {
+            // Handle error if needed
+        }).finally(() => setLoading(false));
     }, []);
 
     const stableCount = data.filter(d => d.status === 'Stable').length;

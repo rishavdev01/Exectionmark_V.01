@@ -4,57 +4,6 @@ import StatsCard from '../../components/StatsCard';
 import { Bug, AlertTriangle, AlertOctagon, RefreshCw, Image, FileText, Monitor } from 'lucide-react';
 import { qaAPI } from '../../services/api';
 
-const bugs = [
-    {
-        id: 'BUG-001', story: 'Payment Gateway Integration', severity: 'Critical', status: 'Open',
-        assignedTo: 'Rahul Verma', reopenCount: 0, summary: 'Stripe webhook fails for recurring payments',
-        env: 'Staging', steps: ['1. Create subscription plan', '2. Trigger webhook', '3. Observe 500 error'],
-        hasScreenshot: true, hasLogs: true,
-    },
-    {
-        id: 'BUG-002', story: 'Dashboard Performance Fix', severity: 'High', status: 'Open',
-        assignedTo: 'Karan Joshi', reopenCount: 1, summary: 'Memory leak on chart re-render after 10+ refreshes',
-        env: 'Dev', steps: ['1. Open dashboard', '2. Refresh 10+ times rapidly', '3. Monitor memory in DevTools'],
-        hasScreenshot: false, hasLogs: true,
-    },
-    {
-        id: 'BUG-003', story: 'User Login Flow Redesign', severity: 'Medium', status: 'In Progress',
-        assignedTo: 'Vikram Singh', reopenCount: 0, summary: 'Email validation regex allows invalid TLDs',
-        env: 'Staging', steps: ['1. Enter email test@abc.invalidtld', '2. Submit login', '3. Form accepts invalid email'],
-        hasScreenshot: true, hasLogs: false,
-    },
-    {
-        id: 'BUG-004', story: 'Email Notification Service', severity: 'Low', status: 'Resolved',
-        assignedTo: 'Meera Nair', reopenCount: 0, summary: 'HTML template font renders differently in Outlook',
-        env: 'Production', steps: ['1. Trigger notification email', '2. Open in Outlook', '3. Compare with Gmail rendering'],
-        hasScreenshot: true, hasLogs: false,
-    },
-    {
-        id: 'BUG-005', story: 'Payment Gateway Integration', severity: 'Critical', status: 'Open',
-        assignedTo: 'Rahul Verma', reopenCount: 2, summary: 'Transaction rollback not triggered on timeout',
-        env: 'Staging', steps: ['1. Initiate payment', '2. Simulate network timeout', '3. Check DB for orphan records'],
-        hasScreenshot: false, hasLogs: true,
-    },
-    {
-        id: 'BUG-006', story: 'Real-time Chat Integration', severity: 'High', status: 'In Progress',
-        assignedTo: 'Ananya Reddy', reopenCount: 0, summary: 'WebSocket disconnects after 5 min idle',
-        env: 'Dev', steps: ['1. Open chat', '2. Wait 5 min idle', '3. Send message — connection lost'],
-        hasScreenshot: false, hasLogs: true,
-    },
-    {
-        id: 'BUG-007', story: 'Dashboard Performance Fix', severity: 'Medium', status: 'Reopened',
-        assignedTo: 'Karan Joshi', reopenCount: 2, summary: 'Lazy-loaded charts flash white before render',
-        env: 'Staging', steps: ['1. Navigate to dashboard', '2. Scroll to charts section', '3. White flash visible'],
-        hasScreenshot: true, hasLogs: false,
-    },
-    {
-        id: 'BUG-008', story: 'User Profile Update API', severity: 'Low', status: 'Resolved',
-        assignedTo: 'Vikram Singh', reopenCount: 0, summary: 'Avatar upload accepts .bmp format (not in spec)',
-        env: 'Dev', steps: ['1. Go to profile', '2. Upload .bmp file', '3. File accepted despite spec limiting to jpg/png'],
-        hasScreenshot: false, hasLogs: false,
-    },
-];
-
 const severityConfig = {
     Critical: { bg: '#fef2f2', color: '#dc2626', icon: '🔴' },
     High: { bg: '#fff7ed', color: '#ea580c', icon: '🟠' },
@@ -73,10 +22,15 @@ export default function QABugReports() {
     const [bugs, setBugs] = useState([]);
     const [expanded, setExpanded] = useState(null);
     const [filter, setFilter] = useState('All');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        qaAPI.bugReports().then(data => { if (data?.length) setBugs(data); }).catch(() => { });
+        qaAPI.bugReports().then(data => { if (data?.length) setBugs(data); })
+            .catch(err => console.error('Failed to fetch bug reports:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading bug reports...</div>;
 
     const severities = ['All', 'Critical', 'High', 'Medium', 'Low'];
     const filtered = filter === 'All' ? bugs : bugs.filter(b => b.severity === filter);

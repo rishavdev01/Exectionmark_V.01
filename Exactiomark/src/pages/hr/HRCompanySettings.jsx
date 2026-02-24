@@ -1,27 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
-import { Settings, Building2, Shield, Sliders, Timer } from 'lucide-react';
+import { Settings, Building2, Shield, Sliders, Timer, Loader2 } from 'lucide-react';
+import { hrAPI } from '../../services/api';
+import ConfirmToast from '../../components/ConfirmToast';
 
 export default function HRCompanySettings() {
     /* Company Info */
-    const [company, setCompany] = useState({ name: 'Exactiomark', domain: 'exactiomark.com', industry: 'Technology', location: 'Bangalore, India' });
+    const [company, setCompany] = useState({ name: '', domain: '', industry: '', location: '' });
+    const [weights, setWeights] = useState({ sprint: 0, alignment: 0, delivery: 0, behaviour: 0 });
+    const [sprintPolicy, setSprintPolicy] = useState({ duration: 0, maxSP: 0, approvalSLA: 0 });
+    const [behaviourAssign, setBehaviourAssign] = useState([]);
+    const [promotionWeightEdit, setPromotionWeightEdit] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [showToast, setShowToast] = useState(false);
 
-    /* Performance Weights */
-    const [weights, setWeights] = useState({ sprint: 40, alignment: 30, delivery: 20, behaviour: 10 });
+    useEffect(() => {
+        hrAPI.companySettings()
+            .then(data => {
+                if (data) {
+                    setCompany(data.company || { name: '', domain: '', industry: '', location: '' });
+                    setWeights(data.weights || { sprint: 0, alignment: 0, delivery: 0, behaviour: 0 });
+                    setSprintPolicy(data.sprintPolicy || { duration: 0, maxSP: 0, approvalSLA: 0 });
+                    setBehaviourAssign(data.behaviourAssign || []);
+                    setPromotionWeightEdit(data.promotionWeightEdit || []);
+                }
+            })
+            .catch(err => console.error('Failed to fetch settings:', err))
+            .finally(() => setLoading(false));
+    }, []);
+
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-
-    /* Sprint Policy */
-    const [sprintPolicy, setSprintPolicy] = useState({ duration: 14, maxSP: 120, approvalSLA: 4 });
-
-    /* Access Control */
-    const [behaviourAssign, setBehaviourAssign] = useState(['PM', 'LEAD']);
-    const [promotionWeightEdit, setPromotionWeightEdit] = useState(['HR', 'CEO']);
-
     const allRoles = ['CEO', 'HR', 'PM', 'LEAD', 'DEVELOPER', 'DEVOPS', 'QA'];
 
     const toggleRole = (list, setList, role) => {
         setList(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
     };
+
+    const handleSave = async () => {
+        if (totalWeight !== 100) {
+            alert('Total performance weights must equal 100%');
+            return;
+        }
+        setSaving(true);
+        try {
+            await hrAPI.updateCompanySettings({
+                company,
+                weights,
+                sprintPolicy,
+                behaviourAssign,
+                promotionWeightEdit
+            });
+            setShowToast(true);
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            alert('Failed to save settings. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading settings...</div>;
+    }
 
     return (
         <div>
@@ -145,10 +186,13 @@ export default function HRCompanySettings() {
             </AnimatedCard>
 
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn btn-primary" onClick={() => alert('Settings saved!')}>
-                    Save All Settings
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {saving ? <Loader2 size={16} className="spin" /> : null}
+                    {saving ? 'Saving...' : 'Save All Settings'}
                 </button>
             </div>
+
+            {showToast && <ConfirmToast message="Settings saved successfully!" onClose={() => setShowToast(false)} />}
         </div>
     );
 }

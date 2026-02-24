@@ -3,11 +3,7 @@ import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
 import { CheckSquare, Filter, AlertTriangle, Clock, Cpu, Plus, UserPlus, X, ClipboardList } from 'lucide-react';
 import { getAssignableMembers } from '../../data/roleHierarchy';
-import { employees as localEmployees } from '../../data/employeeData';
 import { storiesAPI, tasksAPI, employeesAPI } from '../../services/api';
-
-/* PM can only assign to roles below PM in the hierarchy: LEAD, DEVELOPER, DEVOPS, QA */
-let teamMembers = getAssignableMembers('PM', localEmployees).map(e => e.name);
 const riskBadge = { Low: { bg: '#10b981', label: '🟢 Healthy' }, Medium: { bg: '#f59e0b', label: '🟡 Moderate' }, High: { bg: '#ef4444', label: '🔴 High Risk' } };
 const statusCols = ['To Do', 'In Progress', 'In Review', 'Done'];
 const statusColors = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#f59e0b', 'Done': '#10b981' };
@@ -26,14 +22,39 @@ export default function PMTasks() {
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [newStory, setNewStory] = useState({ title: '', assignee: '', type: 'Dev', est: '', status: 'To Do' });
 
+    const [loading, setLoading] = useState(true);
+    const [dbTeamMembers, setDbTeamMembers] = useState([]);
+
     useEffect(() => {
-        storiesAPI.getAll().then(stories => {
-            if (stories?.length) setStoriesData(stories);
-        }).catch(() => { });
-        tasksAPI.getAll({ role: 'PM' }).then(tasks => {
-            if (tasks?.length) setMyTasks(tasks);
-        }).catch(() => { });
+        const fetchAll = async () => {
+            try {
+                const [emps, stories, tasks] = await Promise.all([
+                    employeesAPI.getAll(),
+                    storiesAPI.getAll(),
+                    tasksAPI.getAll()
+                ]);
+
+                if (emps) {
+                    const assignable = getAssignableMembers('PM', emps).map(e => e.name);
+                    setDbTeamMembers(assignable);
+                }
+                if (stories?.length) setStoriesData(stories);
+
+                // Filter tasks assigned to PM role
+                const pmTasks = tasks?.filter(t => t.assignedToRole === 'PM') || [];
+                if (pmTasks.length) setMyTasks(pmTasks);
+            } catch (err) {
+                console.error('Failed to fetch PM Tasks data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading tasks...</div>;
+
+    const avgAlignment = storiesData.length ? Math.round(storiesData.reduce((a, s) => a + s.alignment, 0) / storiesData.length) : 0;
 
     const members = ['All', ...new Set(storiesData.map(s => s.assignee))];
     const filtered = storiesData.filter(s => {
@@ -72,7 +93,7 @@ export default function PMTasks() {
                 <StatsCard icon={<CheckSquare size={24} />} value={storiesData.length} label="Total Stories" color="blue" delay={0} />
                 <StatsCard icon={<Clock size={24} />} value={storiesData.filter(s => s.status === 'Done').length} label="Completed" color="green" delay={0.08} />
                 <StatsCard icon={<AlertTriangle size={24} />} value={storiesData.filter(s => s.risk === 'High').length} label="High Risk" color="red" delay={0.16} />
-                <StatsCard icon={<Cpu size={24} />} value={`${Math.round(storiesData.reduce((a, s) => a + s.alignment, 0) / storiesData.length)}%`} label="Avg Alignment" color="purple" delay={0.24} />
+                <StatsCard icon={<Cpu size={24} />} value={`${avgAlignment}%`} label="Avg Alignment" color="purple" delay={0.24} />
             </div>
 
             {/* Filters + Assign Button */}
@@ -120,7 +141,7 @@ export default function PMTasks() {
                                 <select value={newStory.assignee} onChange={e => setNewStory({ ...newStory, assignee: e.target.value })}
                                     style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                                     <option value="">Select Member</option>
-                                    {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                                    {dbTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -179,7 +200,7 @@ export default function PMTasks() {
                                         <div style={{ marginBottom: 8 }}>
                                             <label style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginBottom: 2 }}>Assigned To</label>
                                             <select value={s.assignee} onChange={e => handleReassign(s.id, e.target.value)} style={selectStyle}>
-                                                {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                                                {dbTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -217,7 +238,7 @@ export default function PMTasks() {
                                             <td style={{ fontWeight: 600 }}>{s.title}</td>
                                             <td>
                                                 <select value={s.assignee} onChange={e => handleReassign(s.id, e.target.value)} style={selectStyle}>
-                                                    {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                                                    {dbTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
                                                 </select>
                                             </td>
                                             <td><span className="badge badge-neutral">{s.type}</span></td>

@@ -13,19 +13,20 @@ const leadBadgeStyle = (val) => ({
 });
 
 export default function PMReviewQueue() {
-    const [data, setData] = useState([
-        { id: 'ST-103', task: 'User Profile API', submittedBy: 'Vikram Singh', alignment: 88, leadApproval: 'Approved', delay: 0, risk: 'Low', aiComment: 'Code quality is high. Alignment within expected range.' },
-        { id: 'ST-102', task: 'Setup CI/CD Pipeline', submittedBy: 'Ananya Reddy', alignment: 78, leadApproval: 'Pending', delay: 6, risk: 'High', aiComment: 'Significant delay detected. Pipeline config has 3 unresolved warnings.' },
-        { id: 'ST-109', task: 'API Rate Limiting', submittedBy: 'Vikram Singh', alignment: 82, leadApproval: 'Approved', delay: 0, risk: 'Low', aiComment: 'Implementation follows best practices. Ready for merge.' },
-        { id: 'ST-104', task: 'Dashboard UI Redesign', submittedBy: 'Rahul Verma', alignment: 65, leadApproval: 'Rejected', delay: 12, risk: 'High', aiComment: 'Alignment below threshold. 3 components deviate from design spec.' },
-        { id: 'ST-106', task: 'Database Migration Script', submittedBy: 'Ananya Reddy', alignment: 72, leadApproval: 'Pending', delay: 3, risk: 'Medium', aiComment: 'Migration plan covers 80% of schemas. Missing rollback strategy.' },
-        { id: 'ST-110', task: 'Monitoring Dashboard', submittedBy: 'Ananya Reddy', alignment: 70, leadApproval: 'Pending', delay: 4, risk: 'Medium', aiComment: 'Partially complete. Needs integration with alerting service.' },
-    ]);
+    const [data, setData] = useState([]);
     const [modal, setModal] = useState(null); // { type, id, taskTitle }
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        pmAPI.reviewQueue().then(d => { if (d?.length) setData(d); }).catch(() => { });
+        pmAPI.reviewQueue()
+            .then(d => { if (d?.length) setData(d); })
+            .catch(err => console.error('Failed to fetch PM Review Queue:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading review queue...</div>;
+
+    const avgAlignment = data.length ? Math.round(data.reduce((a, q) => a + q.alignment, 0) / data.length) : 0;
 
 
     const handleConfirm = (actionData) => {
@@ -55,7 +56,7 @@ export default function PMReviewQueue() {
                 <StatsCard icon={<Inbox size={24} />} value={data.length} label="Pending Reviews" color="orange" delay={0} />
                 <StatsCard icon={<AlertTriangle size={24} />} value={data.filter(q => q.risk === 'High').length} label="High Risk Items" color="red" delay={0.08} />
                 <StatsCard icon={<CheckCircle size={24} />} value={data.filter(q => q.leadApproval === 'Approved').length} label="Lead Approved" color="green" delay={0.16} />
-                <StatsCard icon={<Cpu size={24} />} value={`${Math.round(data.reduce((a, q) => a + q.alignment, 0) / data.length)}%`} label="Avg Alignment" color="purple" delay={0.24} />
+                <StatsCard icon={<Cpu size={24} />} value={`${avgAlignment}%`} label="Avg Alignment" color="purple" delay={0.24} />
             </div>
 
             <AnimatedCard delay={0.3}>

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
-import { UserPlus, Users, Clock, CheckCircle, XCircle, Mail, Briefcase, X, Filter } from 'lucide-react';
-import { candidatesAPI } from '../../services/api';
+import { UserPlus, Users, Clock, CheckCircle, XCircle, Mail, Briefcase, X, Filter, Loader2 } from 'lucide-react';
+import { candidatesAPI, projectsAPI } from '../../services/api';
 import ConfirmToast from '../../components/ConfirmToast';
 
 const availableRoles = ['Project Manager', 'Scrum Master', 'Developer', 'DevOps Engineer', 'QA Engineer', 'HR Manager'];
 const departments = ['Engineering', 'Operations', 'Quality', 'Human Resources', 'Management'];
-const projects = ['Sprint Alpha', 'Sprint Beta', 'Sprint Gamma', 'Sprint Delta'];
 const statusColors = { Screening: '#6b7280', Interview: '#3b82f6', 'Offer Sent': '#f59e0b', Hired: '#10b981', Rejected: '#ef4444' };
 
 export default function CEOHiring() {
@@ -17,10 +16,21 @@ export default function CEOHiring() {
     const [statusFilter, setStatusFilter] = useState('All');
     const [newCandidate, setNewCandidate] = useState({ name: '', email: '', role: '', dept: '', project: '', experience: '' });
 
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        candidatesAPI.getAll().then(data => { if (data?.length) setCandidates(data); }).catch(() => { });
+        Promise.all([
+            candidatesAPI.getAll(),
+            projectsAPI.getAll()
+        ]).then(([candData, projData]) => {
+            if (candData) setCandidates(candData);
+            if (projData) setProjects(projData);
+        }).catch(err => console.error('Failed to fetch hiring data:', err))
+            .finally(() => setLoading(false));
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading pipeline...</div>;
 
 
     const filteredCandidates = candidates.filter(c => {
@@ -141,7 +151,7 @@ export default function CEOHiring() {
                                 <label className="form-label">Assign to Project</label>
                                 <select className="form-select" value={newCandidate.project} onChange={e => setNewCandidate({ ...newCandidate, project: e.target.value })}>
                                     <option value="">Select Project</option>
-                                    {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                    {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                                 </select>
                             </div>
                             <div style={{ gridColumn: '1 / -1' }}>

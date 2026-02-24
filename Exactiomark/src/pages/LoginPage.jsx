@@ -43,7 +43,7 @@ export default function LoginPage() {
                     {/* User ID */}
                     <div className="form-group">
                         <label className="form-label"><User size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} /> User ID</label>
-                        <input className="form-input" type="text" placeholder="Enter your User ID (e.g. CEO001)"
+                        <input className="form-input" type="text" placeholder="e.g. EMP-CEO-001"
                             value={userId} onChange={(e) => setUserId(e.target.value)} autoFocus required />
                     </div>
 

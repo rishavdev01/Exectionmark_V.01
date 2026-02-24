@@ -4,7 +4,7 @@ import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
 import { ClipboardList, Send, CheckCircle, Clock, AlertCircle, Plus, X, Filter, Cpu } from 'lucide-react';
 import { ROLE_CAN_ASSIGN_TO, ROLE_DISPLAY_NAMES } from '../../data/roleHierarchy';
-import { employees as localEmployees } from '../../data/employeeData';
+
 import { employeesAPI, tasksAPI } from '../../services/api';
 import ConfirmToast from '../../components/ConfirmToast';
 
@@ -33,30 +33,45 @@ export default function TaskManagement() {
     const [tab, setTab] = useState(defaultTab);
     const [view, setView] = useState('board');
 
-    /* Assigned to me state (mutable for status changes) */
+    /* All employees fetched from the database */
+    const [dbEmployees, setDbEmployees] = useState([]);
+
+    /* Task lists */
     const [assignedTasks, setAssignedTasks] = useState([]);
     const [assigningTasks, setAssigningTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    /* Load tasks from database */
+    /* Load employees from database (for member dropdown) */
     useEffect(() => {
-        tasksAPI.getAll().then(dbTasks => {
-            if (!dbTasks?.length) return;
-            const userName = user?.name || '';
-            const userRole = role || '';
-            // Tasks assigned TO this user (by name or role)
-            const toMe = dbTasks.filter(t =>
-                t.assignedToRole === userRole ||
-                (t.to && t.to.includes(userName))
-            );
-            // Tasks assigned BY this user
-            const byMe = dbTasks.filter(t =>
-                t.assignedBy === userName ||
-                t.assignedByRole === userRole
-            );
-            if (toMe.length) setAssignedTasks(toMe);
-            if (byMe.length) setAssigningTasks(byMe);
-        }).catch(() => { });
-    }, [role, user?.name]);
+        employeesAPI.getAll()
+            .then(data => setDbEmployees(Array.isArray(data) ? data : []))
+            .catch(() => { });
+    }, []);
+
+    /* Load tasks from database — always update state, even when empty */
+    const loadTasks = () => {
+        const userName = user?.name || '';
+        setLoading(true);
+        tasksAPI.getAll()
+            .then(dbTasks => {
+                const all = Array.isArray(dbTasks) ? dbTasks : [];
+                // Tasks assigned TO this specific user (matched by name inside the 'to' label)
+                const toMe = all.filter(t =>
+                    (t.assignedToName && t.assignedToName === userName) ||
+                    (t.to && t.to.includes(userName))
+                );
+                // Tasks assigned BY this specific user (matched by name, not just role)
+                const byMe = all.filter(t => t.assignedBy === userName);
+                setAssignedTasks(toMe);
+                setAssigningTasks(byMe);
+            })
+            .catch(() => { })
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        if (user?.name) loadTasks();
+    }, [user?.name]);
 
     /* Filters */
     const [statusFilter, setStatusFilter] = useState('All');
@@ -70,18 +85,23 @@ export default function TaskManagement() {
     const [newAssignTo, setNewAssignTo] = useState('');
     const [newAssignName, setNewAssignName] = useState('');
 
-    /* Members of the currently selected assignee role */
+    /* Members of the currently selected assignee role — from the database */
     const membersForRole = newAssignTo
-        ? localEmployees.filter(e => e.role === ROLE_DISPLAY_NAMES[newAssignTo])
+        ? dbEmployees.filter(e => {
+            const displayName = ROLE_DISPLAY_NAMES[newAssignTo];
+            // Match against both the role key (e.g. 'DEVELOPER') and display name (e.g. 'Developer')
+            return e.role === newAssignTo || e.role === displayName;
+        })
         : [];
 
-    const handleNewTask = (e) => {
+    const handleNewTask = async (e) => {
         e.preventDefault();
         const displayName = ROLE_DISPLAY_NAMES[newAssignTo] || newAssignTo;
         const label = newAssignName ? `${newAssignName} (${displayName})` : displayName;
         const task = {
             id: `T-${Date.now().toString().slice(-4)}`,
             title: newTitle,
+            description: newDescription,
             to: label,
             from: `${user?.name || 'Unknown'} (${ROLE_DISPLAY_NAMES[role] || role})`,
             assignedBy: user?.name || '',
@@ -96,8 +116,12 @@ export default function TaskManagement() {
             actual: '—',
             delay: 0,
         };
-        setAssigningTasks(prev => [task, ...prev]);
-        tasksAPI.create(task).catch(err => console.error('Failed to create task:', err));
+        try {
+            await tasksAPI.create(task);
+            loadTasks(); // re-fetch to keep board in sync with DB
+        } catch (err) {
+            console.error('Failed to create task:', err);
+        }
         setNewTitle(''); setNewDescription(''); setNewPriority('Medium'); setNewAssignTo(''); setNewAssignName(''); setShowForm(false);
     };
 
@@ -123,6 +147,13 @@ export default function TaskManagement() {
     });
 
     const currentTasks = tab === 'assigned' ? filteredAssigned : filteredAssigning;
+
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 60, color: 'var(--text-tertiary)', fontSize: '0.9rem', gap: 12 }}>
+            <span style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--border-color)', borderTopColor: '#3b82f6', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+            Loading tasks…
+        </div>
+    );
 
     return (
         <div>
@@ -214,7 +245,7 @@ export default function TaskManagement() {
                                         <select className="form-select" value={newAssignName} onChange={e => setNewAssignName(e.target.value)} required>
                                             <option value="">Select member…</option>
                                             {membersForRole.map(m => (
-                                                <option key={m.id} value={m.name}>{m.name}</option>
+                                                <option key={m.employee_id || m.id} value={m.name}>{m.name}</option>
                                             ))}
                                         </select>
                                     ) : (

@@ -8,15 +8,6 @@ import {
 } from 'recharts';
 import { devopsAPI } from '../../services/api';
 
-const pipelines = [
-    { id: 1, name: 'alpha-backend CI', branch: 'main', lastRun: '5m ago', status: 'Running', duration: '3m 42s', triggeredBy: 'Vikram Singh', successRate: 92, retries: 0, flaky: false },
-    { id: 2, name: 'gamma-frontend CI', branch: 'main', lastRun: '1h ago', status: 'Passed', duration: '2m 18s', triggeredBy: 'Rahul Verma', successRate: 96, retries: 0, flaky: false },
-    { id: 3, name: 'beta-service CD', branch: 'release/v2', lastRun: '2h ago', status: 'Failed', duration: '5m 01s', triggeredBy: 'Ananya Reddy', successRate: 68, retries: 3, flaky: true },
-    { id: 4, name: 'infra-terraform', branch: 'main', lastRun: '3h ago', status: 'Passed', duration: '1m 55s', triggeredBy: 'System', successRate: 98, retries: 0, flaky: false },
-    { id: 5, name: 'alpha-backend CD', branch: 'main', lastRun: '4h ago', status: 'Passed', duration: '4m 12s', triggeredBy: 'Vikram Singh', successRate: 88, retries: 1, flaky: false },
-    { id: 6, name: 'monitoring-deploy', branch: 'main', lastRun: '6h ago', status: 'Failed', duration: '2m 48s', triggeredBy: 'Karan Joshi', successRate: 72, retries: 2, flaky: true },
-];
-
 const failureTrend = [
     { sprint: 'S7', failures: 8 }, { sprint: 'S8', failures: 5 }, { sprint: 'S9', failures: 12 },
     { sprint: 'S10', failures: 6 }, { sprint: 'S11', failures: 4 }, { sprint: 'S12', failures: 7 },
@@ -34,31 +25,33 @@ const statusConfig = {
     Failed: { bg: '#fef2f2', color: '#ef4444', icon: <XCircle size={13} /> },
 };
 
-const aiInsights = [
-    { text: 'Pipeline beta-service CD failed 3 times this sprint. Possible unstable test environment.', type: 'danger' },
-    { text: 'monitoring-deploy has a 28% failure rate. Flaky build detected — investigate Docker cache layer.', type: 'warning' },
-    { text: 'alpha-backend CI maintains 92% success rate. Stable and healthy.', type: 'success' },
-];
-
 const getColor = (v) => v >= 90 ? '#10b981' : v >= 75 ? '#f59e0b' : '#ef4444';
 
 export default function DevOpsPipelines() {
-    const [pipelines, setPipelines] = useState([
-        { id: 1, name: 'alpha-backend CI', branch: 'main', lastRun: '5m ago', status: 'Running', duration: '3m 42s', triggeredBy: 'Vikram Singh', successRate: 92, retries: 0, flaky: false },
-        { id: 2, name: 'gamma-frontend CI', branch: 'main', lastRun: '1h ago', status: 'Passed', duration: '2m 18s', triggeredBy: 'Rahul Verma', successRate: 96, retries: 0, flaky: false },
-        { id: 3, name: 'beta-service CD', branch: 'release/v2', lastRun: '2h ago', status: 'Failed', duration: '5m 01s', triggeredBy: 'Ananya Reddy', successRate: 68, retries: 3, flaky: true },
-    ]);
+    const [pipelines, setPipelines] = useState([]);
     const [filter, setFilter] = useState('All');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        devopsAPI.pipelines().then(data => { if (data?.length) setPipelines(data); }).catch(() => { });
+        devopsAPI.pipelines().then(data => { if (data?.length) setPipelines(data); })
+            .catch(err => console.error('Failed to fetch pipelines:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading pipelines...</div>;
 
     const filtered = filter === 'All' ? pipelines : pipelines.filter(p => p.status === filter);
     const totalPassed = pipelines.filter(p => p.status === 'Passed').length;
     const totalFailed = pipelines.filter(p => p.status === 'Failed').length;
     const avgSuccess = pipelines.length ? Math.round(pipelines.reduce((a, p) => a + p.successRate, 0) / pipelines.length) : 0;
     const avgTime = pipelines.length ? (pipelines.reduce((a, p) => a + parseFloat(p.duration), 0) / pipelines.length).toFixed(1) : '0.0';
+
+    // Dummy AI insights for now, will be fetched from API later
+    const aiInsights = [
+        { text: 'Pipeline beta-service CD failed 3 times this sprint. Possible unstable test environment.', type: 'danger' },
+        { text: 'monitoring-deploy has a 28% failure rate. Flaky build detected — investigate Docker cache layer.', type: 'warning' },
+        { text: 'alpha-backend CI maintains 92% success rate. Stable and healthy.', type: 'success' },
+    ];
 
     return (
         <div>

@@ -1,15 +1,33 @@
+import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
-import { FileText, Download, BarChart3, Award, Star, AlertTriangle, UserPlus } from 'lucide-react';
+import { FileText, Download, BarChart3, Award, Star, AlertTriangle, UserPlus, Loader2 } from 'lucide-react';
+import { hrAPI } from '../../services/api';
 
-const reports = [
-    { title: 'Quarterly Performance Report', desc: 'Company-wide performance metrics, KPIs, and trends for the quarter.', icon: <BarChart3 size={24} />, color: '#3b82f6', lastGenerated: 'Feb 18, 2026' },
-    { title: 'Promotion Readiness Report', desc: 'Eligible candidates, AI recommendations, and manager review status.', icon: <Award size={24} />, color: '#10b981', lastGenerated: 'Feb 17, 2026' },
-    { title: 'Behaviour Evaluation Report', desc: 'Monthly behaviour scores, trends, and comparison across departments.', icon: <Star size={24} />, color: '#8b5cf6', lastGenerated: 'Feb 15, 2026' },
-    { title: 'Attrition Risk Report', desc: 'Members at risk of leaving based on performance drop, overload, and engagement.', icon: <AlertTriangle size={24} />, color: '#ef4444', lastGenerated: 'Feb 14, 2026' },
-    { title: 'Onboarding Completion Report', desc: 'New hire onboarding progress, invitation acceptance rates, and training status.', icon: <UserPlus size={24} />, color: '#f59e0b', lastGenerated: 'Feb 12, 2026' },
-];
+const ICON_MAP = {
+    'BarChart3': <BarChart3 size={24} />,
+    'Award': <Award size={24} />,
+    'Star': <Star size={24} />,
+    'AlertTriangle': <AlertTriangle size={24} />,
+    'UserPlus': <UserPlus size={24} />
+};
 
 export default function HRReports() {
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        hrAPI.hrReports()
+            .then(data => {
+                if (Array.isArray(data)) setReports(data);
+            })
+            .catch(err => console.error('Failed to fetch reports:', err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading reports...</div>;
+    }
+
     return (
         <div>
             <AnimatedCard delay={0.1}>
@@ -22,7 +40,7 @@ export default function HRReports() {
                         {reports.map((r, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '20px 24px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                                 <div style={{ width: 52, height: 52, borderRadius: 'var(--radius-md)', background: `${r.color}15`, color: r.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    {r.icon}
+                                    {ICON_MAP[r.icon] || <FileText size={24} />}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{r.title}</div>

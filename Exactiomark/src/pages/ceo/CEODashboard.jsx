@@ -7,7 +7,7 @@ import {
     AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { ceoAPI } from '../../services/api';
+import { ceoAPI, dashboardAPI } from '../../services/api';
 
 /* Custom label renderer for pie chart – shows percentage */
 const renderPercentLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
@@ -29,12 +29,34 @@ export default function CEODashboard() {
     const [executionData, setExecutionData] = useState([]);
     const [sprintStatus, setSprintStatus] = useState([]);
     const [escalations, setEscalations] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        ceoAPI.executionWeeks().then(setExecutionData).catch(() => { });
-        ceoAPI.sprintStatus().then(setSprintStatus).catch(() => { });
-        ceoAPI.escalations().then(setEscalations).catch(() => { });
+        const fetchAll = async () => {
+            try {
+                const [exec, sprint, esc, s] = await Promise.all([
+                    ceoAPI.executionWeeks(),
+                    ceoAPI.sprintStatus(),
+                    ceoAPI.escalations(),
+                    dashboardAPI.ceo()
+                ]);
+                setExecutionData(exec || []);
+                setSprintStatus(sprint || []);
+                setEscalations(esc || []);
+                setStats(s);
+            } catch (err) {
+                console.error('Failed to fetch CEO dashboard data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
     }, []);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading dashboard...</div>;
+    }
 
     const totalSprints = sprintStatus.reduce((sum, s) => sum + s.value, 0);
 
@@ -42,10 +64,10 @@ export default function CEODashboard() {
         <div>
             {/* KPI Row */}
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<Briefcase size={24} />} value="26" label="Active Sprints" trend="+3 new" trendDir="up" color="blue" delay={0} />
+                <StatsCard icon={<Briefcase size={24} />} value={stats?.active_sprints || '0'} label="Active Sprints" trend="+3 new" trendDir="up" color="blue" delay={0} />
                 <StatsCard icon={<Activity size={24} />} value="91%" label="Execution Health" trend="+5.2%" trendDir="up" color="green" delay={0.08} />
-                <StatsCard icon={<AlertTriangle size={24} />} value="6" label="Open Escalations" trend="-2 this week" trendDir="down" color="orange" delay={0.16} />
-                <StatsCard icon={<Users size={24} />} value="1,420" label="Total Employees" trend="+18 this month" trendDir="up" color="purple" delay={0.24} />
+                <StatsCard icon={<AlertTriangle size={24} />} value={stats?.open_escalations || '0'} label="Open Escalations" trend="-2 this week" trendDir="down" color="orange" delay={0.16} />
+                <StatsCard icon={<Users size={24} />} value={stats?.total_employees?.toLocaleString() || '0'} label="Total Employees" trend="+18 this month" trendDir="up" color="purple" delay={0.24} />
             </div>
 
             {/* Charts Row */}

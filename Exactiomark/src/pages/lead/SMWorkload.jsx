@@ -6,16 +6,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { leadAPI } from '../../services/api';
 
 export default function SMWorkload() {
-    const [data, setData] = useState([
-        { name: 'Vikram Singh', stories: 3, points: 17, reviewLoad: 2, capacity: 72 },
-        { name: 'Ananya Reddy', stories: 3, points: 18, reviewLoad: 1, capacity: 92 },
-        { name: 'Rahul Verma', stories: 2, points: 13, reviewLoad: 1, capacity: 58 },
-        { name: 'Meera Nair', stories: 2, points: 10, reviewLoad: 0, capacity: 60 },
-        { name: 'Karan Joshi', stories: 1, points: 8, reviewLoad: 0, capacity: 45 },
-    ]);
-    const [suggestions, setSuggestions] = useState([
-        { member: 'Ananya Reddy', capacity: 92, suggestion: 'Redistribute 2 stories to Rahul Verma or Karan Joshi' },
-    ]);
+    const [data, setData] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [redistributed, setRedistributed] = useState({});
 
     useEffect(() => {
@@ -23,9 +16,11 @@ export default function SMWorkload() {
             if (!res) return;
             if (res.workload_data?.length) setData(res.workload_data);
             if (res.suggestions?.length) setSuggestions(res.suggestions);
-        }).catch(() => { });
+        }).catch(err => console.error('Failed to fetch workload data:', err))
+            .finally(() => setLoading(false));
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading workload data...</div>;
 
 
     const handleRedistribute = (name) => {

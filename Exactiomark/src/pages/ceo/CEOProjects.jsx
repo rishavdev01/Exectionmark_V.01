@@ -1,29 +1,38 @@
 import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
-import { FolderPlus, Folder, Users, Clock, CheckCircle, Play, Pause, X, Filter, Edit2, Trash2 } from 'lucide-react';
-import { projectsAPI } from '../../services/api';
+import { FolderPlus, Folder, Users, Clock, CheckCircle, Play, Pause, X, Filter, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { projectsAPI, employeesAPI, sprintsAPI } from '../../services/api';
 import ConfirmToast from '../../components/ConfirmToast';
 
-const availablePMs = [
-    { id: 1, name: 'Arjun Patel' },
-    { id: 2, name: 'Neha Gupta' },
-    { id: 3, name: 'Rohit Sharma' },
-];
-
-const sprintOptions = ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5', 'Sprint 6'];
 const statusColors = { Active: '#10b981', 'On Hold': '#f59e0b', Completed: '#3b82f6', Cancelled: '#ef4444' };
-
 export default function CEOProjects() {
     const [projects, setProjects] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [statusFilter, setStatusFilter] = useState('All');
     const [newProject, setNewProject] = useState({ name: '', description: '', client: '', sprint: '', assignedPM: '' });
 
+    const [availablePMs, setAvailablePMs] = useState([]);
+    const [sprintOptions, setSprintOptions] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        projectsAPI.getAll().then(data => { if (data?.length) setProjects(data); }).catch(() => { });
+        Promise.all([
+            projectsAPI.getAll(),
+            employeesAPI.getAll(),
+            sprintsAPI.getAll()
+        ]).then(([projData, empData, sprData]) => {
+            if (projData) setProjects(projData);
+            if (empData) {
+                const pms = empData.filter(e => e.role === 'PM' || e.dept === 'Management').map(e => ({ id: e.employee_id, name: e.name }));
+                setAvailablePMs(pms);
+            }
+            if (sprData) setSprintOptions(sprData);
+        }).catch(err => console.error('Failed to fetch project data:', err))
+            .finally(() => setLoading(false));
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading projects...</div>;
 
 
     const filteredProjects = statusFilter === 'All' ? projects : projects.filter(p => p.status === statusFilter);
@@ -123,7 +132,7 @@ export default function CEOProjects() {
                                 <label className="form-label">Sprint *</label>
                                 <select className="form-select" value={newProject.sprint} onChange={e => setNewProject({ ...newProject, sprint: e.target.value })} required>
                                     <option value="">Select Sprint</option>
-                                    {sprintOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {sprintOptions.map(s => <option key={s.id || s.name} value={s.name}>{s.name || s}</option>)}
                                 </select>
                             </div>
                             <div className="form-group">

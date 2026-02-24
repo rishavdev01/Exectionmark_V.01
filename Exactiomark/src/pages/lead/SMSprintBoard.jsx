@@ -7,19 +7,30 @@ import { leadAPI } from '../../services/api';
 const columns = ['To Do', 'In Progress', 'In Review', 'Done', 'Blocked'];
 const colColors = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#f59e0b', Done: '#10b981', Blocked: '#ef4444' };
 const riskColors = { Low: '#10b981', Medium: '#f59e0b', High: '#ef4444' };
-const alignColor = v => v >= 80 ? '#10b981' : v >= 65 ? '#f59e0b' : '#ef4444';
-const reviewBadge = { Approved: '#10b981', Pending: '#f59e0b', 'In Review': '#3b82f6', Rejected: '#ef4444' };
-const members = ['All', 'Vikram Singh', 'Ananya Reddy', 'Rahul Verma', 'Meera Nair', 'Karan Joshi'];
 
 export default function SMSprintBoard() {
     const [stories, setStories] = useState([]);
     const [view, setView] = useState('board');
     const [memberFilter, setMemberFilter] = useState('All');
     const [riskFilter, setRiskFilter] = useState('All');
+    const [members, setMembers] = useState(['All']);
+    const [loading, setLoading] = useState(true);
+
+    const alignColor = v => v >= 80 ? '#10b981' : v >= 65 ? '#f59e0b' : '#ef4444';
+    const reviewBadge = { Approved: '#10b981', Pending: '#f59e0b', 'In Review': '#3b82f6', Rejected: '#ef4444' };
 
     useEffect(() => {
-        leadAPI.sprintBoard().then(data => { if (data?.length) setStories(data); }).catch(() => { });
+        Promise.all([
+            leadAPI.sprintBoard(),
+            leadAPI.myTeam()
+        ]).then(([storiesData, teamData]) => {
+            if (storiesData) setStories(storiesData);
+            if (teamData) setMembers(['All', ...teamData.map(m => m.name)]);
+        }).catch(err => console.error('Failed to fetch sprint board data:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading sprint board...</div>;
 
     const [showAdd, setShowAdd] = useState(false);
 

@@ -1,58 +1,62 @@
 import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
-import { Cpu, TrendingUp, AlertTriangle, BarChart3, Search, X, Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Cpu, TrendingUp, AlertTriangle, BarChart3, Search, Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
-    LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Area, AreaChart
 } from 'recharts';
 import { pmAPI } from '../../services/api';
 
 export default function PMAlignmentReports() {
-    const [companyAlignment, setCompanyAlignment] = useState(82.3);
-    const [projectAlignment, setProjectAlignment] = useState([
-        { project: 'Sprint Alpha', avg: 88 },
-        { project: 'Sprint Beta', avg: 79 },
-        { project: 'Sprint Gamma', avg: 75 },
-        { project: 'Sprint Delta', avg: 84 },
-    ]);
-    const [memberAlignment, setMemberAlignment] = useState([
-        { name: 'Vikram Singh', alignment: 91, deviation: 3 },
-        { name: 'Sneha Iyer', alignment: 87, deviation: 5 },
-        { name: 'Meera Nair', alignment: 83, deviation: 7 },
-        { name: 'Arjun Patel', alignment: 85, deviation: 4 },
-        { name: 'Ananya Reddy', alignment: 78, deviation: 12 },
-        { name: 'Rahul Verma', alignment: 70, deviation: 18 },
-        { name: 'Karan Joshi', alignment: 65, deviation: 22 },
-    ]);
+    const [companyAlignment, setCompanyAlignment] = useState(0);
+    const [projectAlignment, setProjectAlignment] = useState([]);
+    const [memberAlignment, setMemberAlignment] = useState([]);
     const [alignmentTrend, setAlignmentTrend] = useState([]);
     const [offenseBreakdown, setOffenseBreakdown] = useState([]);
+    const [scopeDrift, setScopeDrift] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [reviewStats, setReviewStats] = useState({ projectAlignment: 0, avgScopeDrift: 0 });
 
-    // ── Review / CoT state ──
+    // Review / CoT state
     const [reviewLoading, setReviewLoading] = useState(false);
     const [reviewData, setReviewData] = useState(null);
     const [showCoT, setShowCoT] = useState(false);
     const [cotExpanded, setCotExpanded] = useState(false);
 
     useEffect(() => {
-        // Alignment breakdown
-        pmAPI.alignmentReports().then(data => {
-            if (!data) return;
-            if (data.company_alignment) setCompanyAlignment(data.company_alignment);
-            if (data.project_alignment?.length) setProjectAlignment(data.project_alignment);
-            if (data.member_alignment?.length) setMemberAlignment(data.member_alignment);
-            if (data.offense_breakdown?.length) setOffenseBreakdown(data.offense_breakdown);
-        }).catch(() => { });
+        const fetchAll = async () => {
+            try {
+                const [reports, trend] = await Promise.all([
+                    pmAPI.alignmentReports(),
+                    pmAPI.alignmentTrend()
+                ]);
 
-        // Alignment trend from DB
-        pmAPI.alignmentTrend().then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                setAlignmentTrend(data.map(d => ({
-                    sprint: d.sprint || d.id,
-                    alignment: d.alignment || d.avg || 0,
-                })));
+                if (reports) {
+                    if (reports.company_alignment) setCompanyAlignment(reports.company_alignment);
+                    if (reports.project_alignment?.length) setProjectAlignment(reports.project_alignment);
+                    if (reports.member_alignment?.length) setMemberAlignment(reports.member_alignment);
+                    if (reports.offense_breakdown?.length) setOffenseBreakdown(reports.offense_breakdown);
+                    if (reports.scope_drift?.length) setScopeDrift(reports.scope_drift);
+                    setReviewStats({
+                        projectAlignment: reports.project_alignment_avg || 0,
+                        avgScopeDrift: reports.avg_scope_drift || 0
+                    });
+                }
+
+                if (Array.isArray(trend) && trend.length > 0) {
+                    setAlignmentTrend(trend.map(d => ({
+                        sprint: d.sprint || d.id,
+                        alignment: d.alignment || d.avg || 0,
+                    })));
+                }
+            } catch (err) {
+                console.error('Failed to fetch PM alignment reports:', err);
+            } finally {
+                setLoading(false);
             }
-        }).catch(() => { });
+        };
+        fetchAll();
     }, []);
 
     const getColor = (v) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
@@ -62,20 +66,12 @@ export default function PMAlignmentReports() {
     const medDev = memberAlignment.filter(m => m.deviation > 8 && m.deviation <= 15).length;
     const lowDev = memberAlignment.filter(m => m.deviation <= 8).length;
     const riskDistribution = [
-        { name: 'High Risk', value: highDev || 2, color: '#ef4444' },
-        { name: 'Medium Risk', value: medDev || 3, color: '#f59e0b' },
-        { name: 'Low Risk', value: lowDev || 2, color: '#10b981' },
+        { name: 'High Risk', value: highDev || 0, color: '#ef4444' },
+        { name: 'Medium Risk', value: medDev || 0, color: '#f59e0b' },
+        { name: 'Low Risk', value: lowDev || 0, color: '#10b981' },
     ];
 
-    const scopeDrift = [
-        { sprint: 'Sprint 1', drift: 12 },
-        { sprint: 'Sprint 2', drift: 8 },
-        { sprint: 'Sprint 3', drift: 15 },
-        { sprint: 'Sprint 4', drift: 10 },
-        { sprint: 'Sprint 5', drift: 7 },
-    ];
-
-    // ── Run AI Alignment Review ──
+    // Run AI Alignment Review
     const handleReview = async () => {
         setReviewLoading(true);
         setReviewData(null);
@@ -98,16 +94,18 @@ export default function PMAlignmentReports() {
         return cot.split('\n').filter(s => s.trim());
     };
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading alignment reports...</div>;
+
     return (
         <div>
             <div className="stats-grid mb-lg">
                 <StatsCard icon={<Cpu size={24} />} value={`${companyAlignment}%`} label="Company Alignment" trend="+1.8%" trendDir="up" color="purple" delay={0} />
-                <StatsCard icon={<TrendingUp size={24} />} value="85.2%" label="Project Alignment" trend="+2.4%" trendDir="up" color="blue" delay={0.08} />
+                <StatsCard icon={<TrendingUp size={24} />} value={`${reviewStats.projectAlignment}%`} label="Project Alignment" trend="+2.4%" trendDir="up" color="blue" delay={0.08} />
                 <StatsCard icon={<AlertTriangle size={24} />} value={memberAlignment.filter(m => m.deviation > 15).length} label="High Deviation" color="red" delay={0.16} />
-                <StatsCard icon={<BarChart3 size={24} />} value="9.8%" label="Avg Scope Drift" color="orange" delay={0.24} />
+                <StatsCard icon={<BarChart3 size={24} />} value={`${reviewStats.avgScopeDrift}%`} label="Avg Scope Drift" color="orange" delay={0.24} />
             </div>
 
-            {/* ── AI Review Button + CoT Panel ─────────────────────── */}
+            {/* AI Review Button + CoT Panel */}
             <AnimatedCard delay={0.28}>
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -130,11 +128,9 @@ export default function PMAlignmentReports() {
                             boxShadow: reviewLoading ? 'none' : '0 4px 14px rgba(139, 92, 246, 0.4)',
                             letterSpacing: '0.5px',
                         }}
-                        onMouseEnter={e => { if (!reviewLoading) e.target.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; }}
                     >
                         {reviewLoading ? (
-                            <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Analyzing...</>
+                            <><Loader2 size={16} className="spin" /> Analyzing...</>
                         ) : (
                             <><Search size={16} /> Review</>
                         )}
@@ -157,11 +153,7 @@ export default function PMAlignmentReports() {
                             textAlign: 'center', padding: '32px',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
                         }}>
-                            <div style={{
-                                width: 44, height: 44, borderRadius: '50%',
-                                border: '3px solid #e5e7eb', borderTopColor: '#8b5cf6',
-                                animation: 'spin 0.8s linear infinite',
-                            }} />
+                            <Loader2 size={40} className="spin" style={{ color: '#8b5cf6' }} />
                             <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                                 Running AI Chain-of-Thought analysis...
                             </span>
@@ -170,7 +162,7 @@ export default function PMAlignmentReports() {
 
                     {showCoT && reviewData && !reviewData.error && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            {/* ── Summary Row ── */}
+                            {/* Summary Row */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                                 <div style={{
                                     padding: '16px', borderRadius: '10px', textAlign: 'center',
@@ -206,7 +198,7 @@ export default function PMAlignmentReports() {
                                 </div>
                             </div>
 
-                            {/* ── Highlights ── */}
+                            {/* Highlights */}
                             {reviewData.highlights?.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     {reviewData.highlights.map((h, i) => (
@@ -222,7 +214,7 @@ export default function PMAlignmentReports() {
                                 </div>
                             )}
 
-                            {/* ── Recommendations ── */}
+                            {/* Recommendations */}
                             {reviewData.recommendations?.length > 0 && (
                                 <div style={{
                                     padding: '14px 16px', borderRadius: '10px',
@@ -240,7 +232,7 @@ export default function PMAlignmentReports() {
                                 </div>
                             )}
 
-                            {/* ── Chain-of-Thought Expandable ── */}
+                            {/* Chain-of-Thought Expandable */}
                             {reviewData.chain_of_thought && (
                                 <div style={{
                                     borderRadius: '10px', overflow: 'hidden',
@@ -308,7 +300,7 @@ export default function PMAlignmentReports() {
                                 </div>
                             )}
 
-                            {/* ── Source Badge ── */}
+                            {/* Source Badge */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, alignItems: 'center' }}>
                                 <span style={{
                                     fontSize: '0.72rem', padding: '4px 10px',
@@ -337,7 +329,7 @@ export default function PMAlignmentReports() {
                 </div>
             </AnimatedCard>
 
-            {/* ── Member Alignment Breakdown ── */}
+            {/* Member Alignment Breakdown */}
             <AnimatedCard delay={0.34} style={{ marginTop: 20 }}>
                 <div className="card-header">
                     <span className="card-title">🔹 Member-wise Alignment Breakdown</span>
@@ -368,7 +360,7 @@ export default function PMAlignmentReports() {
             </AnimatedCard>
 
             <div className="grid-2 mb-lg" style={{ marginTop: 20 }}>
-                {/* ── Alignment Trend per Sprint (from DB) ── */}
+                {/* Alignment Trend per Sprint (from DB) */}
                 <AnimatedCard delay={0.42}>
                     <div className="card-header">
                         <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -406,7 +398,7 @@ export default function PMAlignmentReports() {
                     </div>
                 </AnimatedCard>
 
-                {/* ── High-Risk Story Distribution ── */}
+                {/* High-Risk Story Distribution */}
                 <AnimatedCard delay={0.50}>
                     <div className="card-header"><span className="card-title">High-Risk Story Distribution</span></div>
                     <div className="card-body">
@@ -488,8 +480,10 @@ export default function PMAlignmentReports() {
                 </div>
             </AnimatedCard>
 
-            {/* Spin animation keyframes */}
             <style>{`
+                .spin {
+                    animation: spin 1s linear infinite;
+                }
                 @keyframes spin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }

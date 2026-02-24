@@ -17,12 +17,29 @@ export default function PMRiskEscalation() {
     const [highRiskMembers, setHighRiskMembers] = useState([]);
     const [selectedEscalation, setSelectedEscalation] = useState(null);
 
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        pmAPI.escalationEvents().then(data => { if (data?.length) setEscalationTimeline(data); }).catch(() => { });
-        pmAPI.highRiskMembers().then(data => { if (data?.length) setHighRiskMembers(data); }).catch(() => { });
-        pmAPI.delayDistribution().then(data => { if (data?.length) setDelayDistribution(data); }).catch(() => { });
+        const fetchAll = async () => {
+            try {
+                const [events, members, delay] = await Promise.all([
+                    pmAPI.escalationEvents(),
+                    pmAPI.highRiskMembers(),
+                    pmAPI.delayDistribution()
+                ]);
+                if (events?.length) setEscalationTimeline(events);
+                if (members?.length) setHighRiskMembers(members);
+                if (delay?.length) setDelayDistribution(delay);
+            } catch (err) {
+                console.error('Failed to fetch PM Risk Escalation data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading risk data...</div>;
     // Compute stats
     const activeEscalations = escalationTimeline.filter(e => e.status !== 'Resolved').length;
     const resolvedCount = escalationTimeline.filter(e => e.status === 'Resolved').length;

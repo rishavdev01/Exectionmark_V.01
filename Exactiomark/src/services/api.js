@@ -21,10 +21,10 @@ async function request(path, options = {}) {
 
 /* ── Auth ── */
 export const authAPI = {
-    login: (email, password) =>
+    login: (employee_id, organisation_password, employee_password) =>
         request('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ employee_id, organisation_password, employee_password }),
         }),
 };
 
@@ -266,6 +266,11 @@ export const leadAPI = {
     updateRetrospective: (id, data) =>
         request(`/lead/retrospective/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     generateRetrospective: () => request('/lead/generate-retro', { method: 'POST' }),
+    // SMMyTeam.jsx
+    myTeam: (params = {}) => {
+        const qs = new URLSearchParams(params).toString();
+        return request(`/lead/my-team${qs ? '?' + qs : ''}`);
+    },
     // SMAlignmentInsights.jsx
     alignmentBreakdown: () => request('/lead/alignment/breakdown'),
     lowAlignmentStories: () => request('/lead/alignment/low-stories'),

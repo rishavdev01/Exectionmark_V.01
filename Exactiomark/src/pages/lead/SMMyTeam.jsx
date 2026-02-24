@@ -5,105 +5,6 @@ import { Users, AlertTriangle, TrendingUp, CheckCircle, BarChart2, X } from 'luc
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { leadAPI } from '../../services/api';
 
-const teamData = [
-    {
-        id: 1, name: 'Vikram Singh', role: 'Developer', avatar: 'VS', activeStories: 3,
-        alignmentAvg: 91, risk: 'Low', workload: 72, status: 'Active',
-        behaviourScore: 8.5,
-        sprintStories: [
-            { id: 'ST-101', title: 'Implement Auth Module', points: 8, status: 'Done', alignment: 94 },
-            { id: 'ST-103', title: 'User Profile API', points: 5, status: 'In Review', alignment: 88 },
-            { id: 'ST-109', title: 'API Rate Limiting', points: 4, status: 'In Progress', alignment: 82 },
-        ],
-        alignmentHistory: [
-            { sprint: 'S1', score: 78 }, { sprint: 'S2', score: 82 }, { sprint: 'S3', score: 85 },
-            { sprint: 'S4', score: 88 }, { sprint: 'S5', score: 90 }, { sprint: 'S6', score: 91 },
-        ],
-        rejectionRate: 5, blockerInvolvement: 1,
-        behaviourNotes: 'Consistently delivers high-quality code. Excellent problem solver and proactive communicator.',
-        workloadHistory: [
-            { sprint: 'S1', load: 60 }, { sprint: 'S2', load: 65 }, { sprint: 'S3', load: 70 },
-            { sprint: 'S4', load: 68 }, { sprint: 'S5', load: 72 }, { sprint: 'S6', load: 72 },
-        ],
-    },
-    {
-        id: 2, name: 'Ananya Reddy', role: 'DevOps Engineer', avatar: 'AR', activeStories: 3,
-        alignmentAvg: 73, risk: 'High', workload: 92, status: 'Active',
-        behaviourScore: 7.5,
-        sprintStories: [
-            { id: 'ST-102', title: 'Setup CI/CD Pipeline', points: 8, status: 'In Progress', alignment: 78 },
-            { id: 'ST-106', title: 'Database Migration Script', points: 5, status: 'In Progress', alignment: 72 },
-            { id: 'ST-110', title: 'Monitoring Dashboard', points: 5, status: 'To Do', alignment: 70 },
-        ],
-        alignmentHistory: [
-            { sprint: 'S1', score: 82 }, { sprint: 'S2', score: 80 }, { sprint: 'S3', score: 78 },
-            { sprint: 'S4', score: 75 }, { sprint: 'S5', score: 73 }, { sprint: 'S6', score: 73 },
-        ],
-        rejectionRate: 15, blockerInvolvement: 3,
-        behaviourNotes: 'Technically strong but overloaded. Needs workload redistribution and scope review.',
-        workloadHistory: [
-            { sprint: 'S1', load: 70 }, { sprint: 'S2', load: 80 }, { sprint: 'S3', load: 85 },
-            { sprint: 'S4', load: 88 }, { sprint: 'S5', load: 90 }, { sprint: 'S6', load: 92 },
-        ],
-    },
-    {
-        id: 3, name: 'Rahul Verma', role: 'Developer', avatar: 'RV', activeStories: 2,
-        alignmentAvg: 65, risk: 'High', workload: 58, status: 'Active',
-        behaviourScore: 6.8,
-        sprintStories: [
-            { id: 'ST-104', title: 'Dashboard UI Redesign', points: 8, status: 'In Progress', alignment: 65 },
-            { id: 'ST-107', title: 'Notification Service', points: 5, status: 'To Do', alignment: 58 },
-        ],
-        alignmentHistory: [
-            { sprint: 'S1', score: 72 }, { sprint: 'S2', score: 70 }, { sprint: 'S3', score: 68 },
-            { sprint: 'S4', score: 66 }, { sprint: 'S5', score: 65 }, { sprint: 'S6', score: 65 },
-        ],
-        rejectionRate: 18, blockerInvolvement: 2,
-        behaviourNotes: 'Struggling with alignment on UI tasks. Needs PM clarity on scope before story assignment.',
-        workloadHistory: [
-            { sprint: 'S1', load: 65 }, { sprint: 'S2', load: 62 }, { sprint: 'S3', load: 60 },
-            { sprint: 'S4', load: 58 }, { sprint: 'S5', load: 58 }, { sprint: 'S6', load: 58 },
-        ],
-    },
-    {
-        id: 4, name: 'Meera Nair', role: 'QA Engineer', avatar: 'MN', activeStories: 2,
-        alignmentAvg: 87, risk: 'Low', workload: 60, status: 'Active',
-        behaviourScore: 9.0,
-        sprintStories: [
-            { id: 'ST-105', title: 'Integration Tests – Sprint API', points: 5, status: 'Done', alignment: 85 },
-            { id: 'ST-108', title: 'Load Testing Setup', points: 5, status: 'Done', alignment: 90 },
-        ],
-        alignmentHistory: [
-            { sprint: 'S1', score: 80 }, { sprint: 'S2', score: 82 }, { sprint: 'S3', score: 84 },
-            { sprint: 'S4', score: 85 }, { sprint: 'S5', score: 87 }, { sprint: 'S6', score: 87 },
-        ],
-        rejectionRate: 4, blockerInvolvement: 0,
-        behaviourNotes: 'Consistently high quality. Zero blocker involvement. Strong QA ownership.',
-        workloadHistory: [
-            { sprint: 'S1', load: 55 }, { sprint: 'S2', load: 58 }, { sprint: 'S3', load: 60 },
-            { sprint: 'S4', load: 60 }, { sprint: 'S5', load: 60 }, { sprint: 'S6', load: 60 },
-        ],
-    },
-    {
-        id: 5, name: 'Karan Joshi', role: 'Developer', avatar: 'KJ', activeStories: 1,
-        alignmentAvg: 58, risk: 'High', workload: 45, status: 'Active',
-        behaviourScore: 6.2,
-        sprintStories: [
-            { id: 'ST-107', title: 'Notification Service', points: 8, status: 'To Do', alignment: 58 },
-        ],
-        alignmentHistory: [
-            { sprint: 'S1', score: 65 }, { sprint: 'S2', score: 63 }, { sprint: 'S3', score: 61 },
-            { sprint: 'S4', score: 59 }, { sprint: 'S5', score: 58 }, { sprint: 'S6', score: 58 },
-        ],
-        rejectionRate: 22, blockerInvolvement: 2,
-        behaviourNotes: 'Declining alignment trend. Requires 1:1 discussion on scope understanding and blockers.',
-        workloadHistory: [
-            { sprint: 'S1', load: 50 }, { sprint: 'S2', load: 48 }, { sprint: 'S3', load: 46 },
-            { sprint: 'S4', load: 45 }, { sprint: 'S5', load: 45 }, { sprint: 'S6', load: 45 },
-        ],
-    },
-];
-
 const riskColor = { Low: '#10b981', Medium: '#f59e0b', High: '#ef4444' };
 const statusColors = { 'To Do': '#6b7280', 'In Progress': '#3b82f6', 'In Review': '#f59e0b', 'Done': '#10b981' };
 
@@ -111,6 +12,7 @@ export default function SMMyTeam() {
     const [teamData, setTeamData] = useState([]);
     const [selected, setSelected] = useState(null);
     const [notes, setNotes] = useState({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         leadAPI.myTeam().then(data => {
@@ -118,8 +20,13 @@ export default function SMMyTeam() {
                 setTeamData(data);
                 setNotes(Object.fromEntries(data.map(m => [m.id, m.behaviourNotes || ''])));
             }
-        }).catch(() => { });
+        }).catch(err => console.error('Failed to fetch team data:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading team members...</div>;
+    }
 
     const member = teamData.find(m => m.id === selected);
 

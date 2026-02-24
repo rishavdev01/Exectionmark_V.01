@@ -6,27 +6,11 @@ import AnimatedCard from '../../components/AnimatedCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function DevDashboard() {
-    const [myTasks, setMyTasks] = useState([
-        { id: 1, title: 'Implement OAuth2 login flow', project: 'Project Alpha', status: 'In Progress', priority: 'High', due: 'Feb 18' },
-        { id: 2, title: 'Write unit tests for payments', project: 'Project Alpha', status: 'To Do', priority: 'Medium', due: 'Feb 20' },
-        { id: 3, title: 'Refactor notification service', project: 'Project Beta', status: 'In Review', priority: 'Low', due: 'Feb 17' },
-        { id: 4, title: 'Fix pagination on dashboard', project: 'Project Gamma', status: 'Done', priority: 'Medium', due: 'Feb 15' },
-    ]);
-    const [activeBranches, setActiveBranches] = useState([
-        { id: 1, name: 'feature/oauth2-flow', repo: 'alpha-backend', commits: 12, lastPush: '30m ago', status: 'Ahead' },
-        { id: 2, name: 'fix/pagination-bug', repo: 'gamma-frontend', commits: 3, lastPush: '2h ago', status: 'Up to date' },
-        { id: 3, name: 'feature/notifications-v2', repo: 'beta-service', commits: 8, lastPush: '1d ago', status: 'Behind' },
-    ]);
-    const [pullRequests, setPullRequests] = useState([
-        { id: 1, title: 'PR #342 – OAuth2 middleware', status: 'Open', comments: 5 },
-        { id: 2, title: 'PR #338 – Fix date picker', status: 'Approved', comments: 2 },
-        { id: 3, title: 'PR #335 – Notification refactor', status: 'Changes Requested', comments: 8 },
-    ]);
-    const [aiFeedback, setAiFeedback] = useState([
-        { id: 1, title: 'Code Quality: 92/100', desc: 'High code quality. Reduce cyclomatic complexity in auth.js.', type: 'success' },
-        { id: 2, title: 'Security Issue Detected', desc: 'SQL query in getUserById() may be vulnerable to injection.', type: 'danger' },
-        { id: 3, title: 'Performance Suggestion', desc: 'Memoize computeMetrics() – called 47 times per render.', type: 'warning' },
-    ]);
+    const [myTasks, setMyTasks] = useState([]);
+    const [activeBranches, setActiveBranches] = useState([]);
+    const [pullRequests, setPullRequests] = useState([]);
+    const [aiFeedback, setAiFeedback] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         dashboardAPI.developer().then(data => {
@@ -35,7 +19,11 @@ export default function DevDashboard() {
             if (data.active_branches?.length) setActiveBranches(data.active_branches);
             if (data.pull_requests?.length) setPullRequests(data.pull_requests);
             if (data.ai_feedback?.length) setAiFeedback(data.ai_feedback);
-        }).catch(() => { });
+        }).catch(() => {
+            // Handle error if needed
+        }).finally(() => {
+            setLoading(false);
+        });
     }, []);
 
 
@@ -49,10 +37,9 @@ export default function DevDashboard() {
     return (
         <div>
             <div className="stats-grid mb-lg">
-
-                <StatsCard icon={<CheckSquare size={24} />} value="4" label="Active Tasks" color="blue" delay={0} />
-                <StatsCard icon={<GitBranch size={24} />} value="3" label="Active Branches" color="green" delay={0.08} />
-                <StatsCard icon={<GitPullRequest size={24} />} value="3" label="Pull Requests" color="orange" delay={0.16} />
+                <StatsCard icon={<CheckSquare size={24} />} value={myTasks.filter(t => t.status !== 'Done').length.toString()} label="Active Tasks" color="blue" delay={0} />
+                <StatsCard icon={<GitBranch size={24} />} value={activeBranches.length.toString()} label="Active Branches" color="green" delay={0.08} />
+                <StatsCard icon={<GitPullRequest size={24} />} value={pullRequests.length.toString()} label="Pull Requests" color="orange" delay={0.16} />
                 <StatsCard icon={<Cpu size={24} />} value="92" label="AI Quality Score" trend="+4" trendDir="up" color="green" delay={0.24} />
             </div>
             <div className="grid-2 mb-lg">

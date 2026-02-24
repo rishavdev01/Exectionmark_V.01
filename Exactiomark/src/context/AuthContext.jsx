@@ -4,19 +4,17 @@ import { authAPI } from '../services/api';
 const AuthContext = createContext(null);
 
 /* ── Company-wide password (same for all employees) ── */
-const COMPANY_PASSWORD = 'execorg2026';
+const COMPANY_PASSWORD = 'Exactio@org123';
 
 /* ── Fallback users for offline/dev mode ── */
 const MOCK_USERS = [
-    { id: 'CEO001', password: 'ceo@123', name: 'Rajesh Mehta', role: 'CEO', email: 'rajesh@exactiomark.com', department: 'Executive', avatar: 'RM' },
-    { id: 'HR001', password: 'hr@123', name: 'Priya Sharma', role: 'HR', email: 'priya@exactiomark.com', department: 'Human Resources', avatar: 'PS' },
-    { id: 'PM001', password: 'pm@123', name: 'Arjun Patel', role: 'PM', email: 'arjun@exactiomark.com', department: 'Sprint Mgmt', avatar: 'AP' },
-    { id: 'LEAD001', password: 'lead@123', name: 'Sneha Iyer', role: 'LEAD', email: 'sneha@exactiomark.com', department: 'Engineering', avatar: 'SI' },
-    { id: 'EMPLEAD001', password: 'emplead@123', name: 'Sneha Iyer', role: 'LEAD', email: 'sneha@exactiomark.com', department: 'Engineering', avatar: 'SI' },
-    { id: 'DEV001', password: 'dev@123', name: 'Vikram Singh', role: 'DEVELOPER', email: 'vikram@exactiomark.com', department: 'Engineering', avatar: 'VS' },
-    { id: 'EMPDEV001', password: 'empdev@123', name: 'Vikram Singh', role: 'DEVELOPER', email: 'vikram@exactiomark.com', department: 'Engineering', avatar: 'VS' },
-    { id: 'OPS001', password: 'ops@123', name: 'Ananya Reddy', role: 'DEVOPS', email: 'ananya@exactiomark.com', department: 'Infrastructure', avatar: 'AR' },
-    { id: 'QA001', password: 'qa@123', name: 'Divya Menon', role: 'QA', email: 'divya@exactiomark.com', department: 'Quality Assurance', avatar: 'DM' },
+    { id: 'EMP-CEO-001', password: 'Emp@ceo123', name: 'ceo_admin', role: 'CEO', email: 'ceo@exactiomark.com', dept: 'Executive', avatar: 'CE' },
+    { id: 'EMP-HR-001', password: 'Emp@hr123', name: 'hr_admin', role: 'HR', email: 'hr@exactiomark.com', dept: 'Human Resources', avatar: 'HR' },
+    { id: 'EMP-PM-001', password: 'Emp@pm123', name: 'pm_admin', role: 'PM', email: 'pm@exactiomark.com', dept: 'Management', avatar: 'PM' },
+    { id: 'EMP-LEAD-001', password: 'Emp@lead123', name: 'lead_admin', role: 'LEAD', email: 'lead@exactiomark.com', dept: 'Engineering', avatar: 'LA' },
+    { id: 'EMP-DEV-001', password: 'Emp@dev123', name: 'dev_admin', role: 'DEVELOPER', email: 'dev@exactiomark.com', dept: 'Engineering', avatar: 'DA' },
+    { id: 'EMP-OPS-001', password: 'Emp@ops123', name: 'ops_admin', role: 'DEVOPS', email: 'ops@exactiomark.com', dept: 'Infrastructure', avatar: 'OA' },
+    { id: 'EMP-QA-001', password: 'Emp@qa123', name: 'qa_admin', role: 'QA', email: 'qa@exactiomark.com', dept: 'Quality Assurance', avatar: 'QA' },
 ];
 
 export function AuthProvider({ children }) {
@@ -26,35 +24,27 @@ export function AuthProvider({ children }) {
     });
 
     const login = async (userId, companyPwd, personalPwd) => {
-        /* Step 1 – validate company password */
+        /* Step 1 – validate company password client-side */
         if (companyPwd !== COMPANY_PASSWORD) {
             return { success: false, error: 'Invalid company password.' };
         }
 
-        /* Step 2 – try backend API first */
+        /* Step 2 – call backend API with all three fields */
         try {
-            // Check if we have an email mapping in mock users
-            const mockUser = MOCK_USERS.find(
-                u => u.id.toLowerCase() === userId.trim().toLowerCase()
+            const data = await authAPI.login(
+                userId.trim(),   // employee_id
+                companyPwd,      // organisation_password
+                personalPwd      // employee_password
             );
-
-            // If no mockUser mapping, use the userId itself (it might be an email or an Employee ID)
-            const identifier = mockUser ? mockUser.email : userId.trim();
-
-            const data = await authAPI.login(identifier, personalPwd);
-            if (data && data.name) {
-                const safeUser = { ...data };
-                delete safeUser.password;
-                setUser(safeUser);
-                sessionStorage.setItem('exec_user', JSON.stringify(safeUser));
-                return { success: true, user: safeUser };
+            if (data && data.employee_id) {
+                setUser(data);
+                sessionStorage.setItem('exec_user', JSON.stringify(data));
+                return { success: true, user: data };
             }
             return { success: false, error: 'Invalid credentials.' };
         } catch (err) {
-            // Only fallback to mock if it's a network error or explicitly requested (optional)
+            /* Offline fallback — only used when backend is unreachable */
             console.warn('Backend login failed, falling back to MOCK_USERS:', err.message);
-
-            /* Fallback to local mock if backend is down */
             const found = MOCK_USERS.find(
                 u => u.id.toLowerCase() === userId.trim().toLowerCase() && u.password === personalPwd
             );

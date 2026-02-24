@@ -5,7 +5,7 @@ import { employeesAPI } from '../../services/api';
 import { getEmployee } from '../../data/employeeData';
 import {
     Mail, Building, Shield, Phone, BarChart3, TrendingUp, AlertTriangle,
-    Award, User, MessageSquare, Zap, Clock, ArrowLeft, CheckCircle, PauseCircle, Send
+    Award, User, MessageSquare, Zap, Clock, ArrowLeft, CheckCircle, PauseCircle, Send, Loader2
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -32,11 +32,29 @@ function StatRow({ icon, label, value, color }) {
 export default function EmployeeProfile() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [emp, setEmp] = useState(() => getEmployee(id));
+    const [emp, setEmp] = useState(null);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        employeesAPI.getById(id).then(setEmp).catch(() => setEmp(getEmployee(id)));
+        employeesAPI.getById(id)
+            .then(setEmp)
+            .catch(() => setEmp(null));
     }, [id]);
+
+    const handlePromotionAction = async (action) => {
+        if (!emp) return;
+        setSaving(true);
+        const updatedPromotion = { ...emp.promotion, finalDecision: action };
+        try {
+            await employeesAPI.update(id, { promotion: updatedPromotion });
+            setEmp(prev => ({ ...prev, promotion: updatedPromotion }));
+        } catch (err) {
+            console.error('Failed to update promotion:', err);
+            alert('Failed to update promotion status.');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     if (!emp) {
         return (
@@ -49,8 +67,10 @@ export default function EmployeeProfile() {
         );
     }
 
-    const b = emp.behaviourScores;
-    const avgBehaviour = ((b.communication + b.ownership + b.teamwork + b.leadership + b.discipline) / 5).toFixed(1);
+    const b = emp.behaviourScores || { communication: 0, ownership: 0, collaboration: 0, teamwork: 0, leadership: 0, discipline: 0 };
+    // Standardizing on 'collaboration' instead of 'teamwork' if collaboration exists, else fallback
+    const collabScore = b.collaboration !== undefined ? b.collaboration : (b.teamwork || 0);
+    const avgBehaviour = ((b.communication + b.ownership + collabScore + b.leadership + b.discipline) / 5).toFixed(1);
 
     return (
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -223,17 +243,26 @@ export default function EmployeeProfile() {
                     {/* Action Buttons */}
                     {emp.promotion.finalDecision !== 'Promoted' && (
                         <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
-                            <button className="btn btn-sm btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                                onClick={() => alert(`Sending ${emp.name}'s promotion to review...`)}>
-                                <Send size={14} /> Send to Review
+                            <button className="btn btn-sm btn-primary"
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                disabled={saving}
+                                onClick={() => handlePromotionAction('Pending')}>
+                                {saving ? <Loader2 size={14} className="spin" /> : <Send size={14} />}
+                                Send to Review
                             </button>
-                            <button className="btn btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#10b981', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}
-                                onClick={() => alert(`Approving promotion for ${emp.name}...`)}>
-                                <CheckCircle size={14} /> Approve Promotion
+                            <button className="btn btn-sm"
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#10b981', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '6px 14px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.7 : 1 }}
+                                disabled={saving}
+                                onClick={() => handlePromotionAction('Promoted')}>
+                                {saving ? <Loader2 size={14} className="spin" /> : <CheckCircle size={14} />}
+                                Approve Promotion
                             </button>
-                            <button className="btn btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#ef4444', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}
-                                onClick={() => alert(`Putting ${emp.name}'s promotion on hold...`)}>
-                                <PauseCircle size={14} /> Hold
+                            <button className="btn btn-sm"
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#ef4444', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', padding: '6px 14px', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.7 : 1 }}
+                                disabled={saving}
+                                onClick={() => handlePromotionAction('Hold')}>
+                                {saving ? <Loader2 size={14} className="spin" /> : <PauseCircle size={14} />}
+                                Hold
                             </button>
                         </div>
                     )}

@@ -1,25 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { employeesAPI } from '../../services/api';
 import { ROLE_LABELS } from '../../data/navigation';
 import AnimatedCard from '../../components/AnimatedCard';
 import { Mail, Building, Shield, Phone, BarChart3, TrendingUp, AlertTriangle, Award, User, MessageSquare, Zap, Clock, Github, Eye, EyeOff, Copy, Check, Fingerprint, Camera } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-/* Mock data for employee detail view */
-const alignmentHistory = [
-    { sprint: 'S1', score: 78 }, { sprint: 'S2', score: 82 }, { sprint: 'S3', score: 85 },
-    { sprint: 'S4', score: 80 }, { sprint: 'S5', score: 88 }, { sprint: 'S6', score: 91 },
-];
-
-const sprintContribution = [
-    { sprint: 'S1', sp: 18 }, { sprint: 'S2', sp: 22 }, { sprint: 'S3', sp: 20 },
-    { sprint: 'S4', sp: 24 }, { sprint: 'S5', sp: 21 }, { sprint: 'S6', sp: 26 },
-];
-
-const perfMetrics = { alignment: 91, onTime: 94, rejection: 5 };
-const behaviourScores = { communication: 9, ownership: 9, teamwork: 8, managerComment: 'Consistently delivers high-quality code. Excellent problem solver and proactive communicator.' };
-const riskData = { overloadFreq: 2, escalationInvolvement: 1, perfDrop: -3.2 };
-const promoData = { eligible: true, aiRecommendation: 'Strongly Recommend', lastReview: 'Feb 15, 2026' };
 
 const getColor = (s) => s >= 80 ? '#10b981' : s >= 60 ? '#f59e0b' : '#ef4444';
 
@@ -40,12 +25,38 @@ export default function ProfilePage() {
     const isCEO = user?.role === 'CEO';
     const showPAT = user?.role === 'DEVELOPER' || user?.role === 'DEVOPS';
 
-    const [pat, setPat] = useState('ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890');
-    const [patVisible, setPatVisible] = useState(false);
-    const [patEditing, setPatEditing] = useState(false);
-    const [copied, setCopied] = useState(false);
     const [profileImg, setProfileImg] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [profileData, setProfileData] = useState(null);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        if (!user?.employee_id) return;
+
+        employeesAPI.getById(user.employee_id)
+            .then(data => {
+                setProfileData(data);
+                if (data.avatar) setProfileImg(data.avatar);
+            })
+            .catch(err => console.error('Failed to fetch profile:', err))
+            .finally(() => setLoading(false));
+    }, [user?.employee_id]);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading profile...</div>;
+    }
+
+    // Use fetched data or defaults if missing
+    const metrics = {
+        alignment: profileData?.alignment || 0,
+        onTime: profileData?.onTime || 0,
+        rejection: profileData?.rejection || 0
+    };
+    const behavior = profileData?.behaviourScores || { communication: 0, ownership: 0, teamwork: 0, managerComment: 'No comments yet.' };
+    const risk = profileData?.riskData || { overloadFreq: 0, escalationInvolvement: 0, perfDrop: 0 };
+    const promo = profileData?.promotion || { eligible: false, aiRecommendation: 'None', lastReview: '—' };
+    const history = profileData?.alignmentHistory || [];
+    const trend = profileData?.sprintTrend || [];
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -132,7 +143,7 @@ export default function ProfilePage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Mail size={18} color="var(--text-tertiary)" /><div><div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Email</div><div style={{ fontWeight: 600 }}>{user?.email}</div></div></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Building size={18} color="var(--text-tertiary)" /><div><div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Department</div><div style={{ fontWeight: 600 }}>{user?.department}</div></div></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Shield size={18} color="var(--text-tertiary)" /><div><div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Role</div><div style={{ fontWeight: 600 }}>{user?.role}</div></div></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Phone size={18} color="var(--text-tertiary)" /><div><div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Phone</div><div style={{ fontWeight: 600 }}>+91 98765 43210</div></div></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Phone size={18} color="var(--text-tertiary)" /><div><div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Phone</div><div style={{ fontWeight: 600 }}>{user?.phone || '—'}</div></div></div>
 
                         {/* GitHub PAT — DEVELOPER & DEVOPS only */}
                         {showPAT && (
@@ -203,16 +214,16 @@ export default function ProfilePage() {
                             </span>
                         </div>
                         <div className="card-body">
-                            <StatRow icon={<TrendingUp size={16} color="#3b82f6" />} label="Current Alignment Score" value={`${perfMetrics.alignment}%`} color={getColor(perfMetrics.alignment)} />
-                            <StatRow icon={<Clock size={16} color="#10b981" />} label="On-time Delivery %" value={`${perfMetrics.onTime}%`} color={getColor(perfMetrics.onTime)} />
-                            <StatRow icon={<AlertTriangle size={16} color="#ef4444" />} label="Rejection Rate" value={`${perfMetrics.rejection}%`} color={perfMetrics.rejection > 10 ? '#ef4444' : '#10b981'} />
+                            <StatRow icon={<TrendingUp size={16} color="#3b82f6" />} label="Current Alignment Score" value={`${metrics.alignment}%`} color={getColor(metrics.alignment)} />
+                            <StatRow icon={<Clock size={16} color="#10b981" />} label="On-time Delivery %" value={`${metrics.onTime}%`} color={getColor(metrics.onTime)} />
+                            <StatRow icon={<AlertTriangle size={16} color="#ef4444" />} label="Rejection Rate" value={`${metrics.rejection}%`} color={metrics.rejection > 10 ? '#ef4444' : '#10b981'} />
 
                             <div className="grid-2" style={{ marginTop: 20, gap: 16 }}>
                                 <div>
                                     <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 8 }}>Alignment Score History</div>
                                     <div style={{ height: 180 }}>
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={alignmentHistory}>
+                                            <LineChart data={history}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                                 <XAxis dataKey="sprint" tick={{ fontSize: 11 }} />
                                                 <YAxis domain={[60, 100]} tick={{ fontSize: 11 }} />
@@ -226,7 +237,7 @@ export default function ProfilePage() {
                                     <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 8 }}>Sprint Contribution Trend</div>
                                     <div style={{ height: 180 }}>
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={sprintContribution}>
+                                            <LineChart data={trend}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                                 <XAxis dataKey="sprint" tick={{ fontSize: 11 }} />
                                                 <YAxis tick={{ fontSize: 11 }} />
@@ -251,9 +262,9 @@ export default function ProfilePage() {
                         <div className="card-body">
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
                                 {[
-                                    { label: 'Communication', val: behaviourScores.communication },
-                                    { label: 'Ownership', val: behaviourScores.ownership },
-                                    { label: 'Teamwork', val: behaviourScores.teamwork },
+                                    { label: 'Communication', val: behavior.communication },
+                                    { label: 'Ownership', val: behavior.ownership },
+                                    { label: 'Teamwork', val: behavior.teamwork },
                                 ].map(b => (
                                     <div key={b.label} style={{ textAlign: 'center', padding: '16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
                                         <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{b.label}</div>
@@ -265,7 +276,7 @@ export default function ProfilePage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontWeight: 600, fontSize: '0.82rem', color: '#7c3aed' }}>
                                     <MessageSquare size={14} /> Manager Comments
                                 </div>
-                                <div style={{ fontSize: '0.85rem', lineHeight: 1.6, color: '#4c1d95' }}>{behaviourScores.managerComment}</div>
+                                <div style={{ fontSize: '0.85rem', lineHeight: 1.6, color: '#4c1d95' }}>{behavior.managerComment}</div>
                             </div>
                         </div>
                     </AnimatedCard>
@@ -278,9 +289,9 @@ export default function ProfilePage() {
                             </span>
                         </div>
                         <div className="card-body">
-                            <StatRow icon={<Zap size={16} color="#f59e0b" />} label="Overload Frequency (last 3 sprints)" value={`${riskData.overloadFreq} times`} />
-                            <StatRow icon={<AlertTriangle size={16} color="#ef4444" />} label="Escalation Involvement" value={`${riskData.escalationInvolvement} escalation(s)`} />
-                            <StatRow icon={<TrendingUp size={16} color={riskData.perfDrop < 0 ? '#ef4444' : '#10b981'} />} label="Performance Change %" value={`${riskData.perfDrop}%`} color={riskData.perfDrop < 0 ? '#ef4444' : '#10b981'} />
+                            <StatRow icon={<Zap size={16} color="#f59e0b" />} label="Overload Frequency (last 3 sprints)" value={`${risk.overloadFreq} times`} />
+                            <StatRow icon={<AlertTriangle size={16} color="#ef4444" />} label="Escalation Involvement" value={`${risk.escalationInvolvement} escalation(s)`} />
+                            <StatRow icon={<TrendingUp size={16} color={risk.perfDrop < 0 ? '#ef4444' : '#10b981'} />} label="Performance Change %" value={`${risk.perfDrop}%`} color={risk.perfDrop < 0 ? '#ef4444' : '#10b981'} />
                         </div>
                     </AnimatedCard>
 
@@ -292,9 +303,9 @@ export default function ProfilePage() {
                             </span>
                         </div>
                         <div className="card-body">
-                            <StatRow icon={<Shield size={16} color="#10b981" />} label="Eligibility Status" value={promoData.eligible ? '✓ Eligible' : '✗ Not Eligible'} color={promoData.eligible ? '#10b981' : '#ef4444'} />
-                            <StatRow icon={<Zap size={16} color="#8b5cf6" />} label="AI Recommendation" value={promoData.aiRecommendation} color={promoData.aiRecommendation.includes('Strongly') ? '#10b981' : '#3b82f6'} />
-                            <StatRow icon={<Clock size={16} color="#6b7280" />} label="Last Review Date" value={promoData.lastReview} />
+                            <StatRow icon={<Shield size={16} color="#10b981" />} label="Eligibility Status" value={promo.eligible ? '✓ Eligible' : '✗ Not Eligible'} color={promo.eligible ? '#10b981' : '#ef4444'} />
+                            <StatRow icon={<Zap size={16} color="#8b5cf6" />} label="AI Recommendation" value={promo.aiRecommendation} color={promo.aiRecommendation?.includes('Strongly') ? '#10b981' : '#3b82f6'} />
+                            <StatRow icon={<Clock size={16} color="#6b7280" />} label="Last Review Date" value={promo.lastReview} />
                         </div>
                     </AnimatedCard>
                 </>

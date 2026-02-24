@@ -7,38 +7,46 @@ import { pmAPI } from '../../services/api';
 const priorityColors = { High: '#ef4444', Medium: '#f59e0b', Low: '#10b981' };
 
 export default function PMRetrospective() {
-    const [retroSummary, setRetroSummary] = useState({
-        sprintName: 'Sprint Alpha', completionPct: 82, alignmentAvg: 84.2,
-        behaviourAvg: 8.1, bottleneck: 'DevOps Pipeline',
-    });
+    const [retroSummary, setRetroSummary] = useState(null);
     const [wentWell, setWentWell] = useState([]);
     const [didntGoWell, setDidntGoWell] = useState([]);
     const [improvements, setImprovements] = useState([]);
     const [aiSummary, setAiSummary] = useState('');
     const [chainOfThought, setChainOfThought] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
     const [showCoT, setShowCoT] = useState(false);
     const [source, setSource] = useState('');
 
     // Load cached data on mount
     useEffect(() => {
-        pmAPI.retroSummary().then(data => {
-            if (data) setRetroSummary(Array.isArray(data) ? data[0] || retroSummary : data);
-        }).catch(() => { });
-        pmAPI.improvements().then(data => {
-            if (!Array.isArray(data)) return;
-            const well = data.filter(i => i.category === 'went_well').map(i => typeof i === 'string' ? i : (i.text || i.action || ''));
-            const didnt = data.filter(i => i.category === 'didnt_go_well').map(i => typeof i === 'string' ? i : (i.text || i.action || ''));
-            const actions = data.filter(i => i.category === 'improvement');
-            if (well.length) setWentWell(well);
-            if (didnt.length) setDidntGoWell(didnt);
-            if (actions.length) setImprovements(actions);
-        }).catch(() => { });
+        const fetchData = async () => {
+            try {
+                const [summary, impr] = await Promise.all([
+                    pmAPI.retroSummary(),
+                    pmAPI.improvements()
+                ]);
+                if (summary) setRetroSummary(Array.isArray(summary) ? summary[0] : summary);
+                if (Array.isArray(impr)) {
+                    const well = impr.filter(i => i.category === 'went_well').map(i => typeof i === 'string' ? i : (i.text || i.action || ''));
+                    const didnt = impr.filter(i => i.category === 'didnt_go_well').map(i => typeof i === 'string' ? i : (i.text || i.action || ''));
+                    const actions = impr.filter(i => i.category === 'improvement');
+                    if (well.length) setWentWell(well);
+                    if (didnt.length) setDidntGoWell(didnt);
+                    if (actions.length) setImprovements(actions);
+                }
+            } catch (err) {
+                console.error('Failed to fetch PM Retrospective data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
     // Generate retrospective via AI agent
     const handleGenerate = async () => {
-        setLoading(true);
+        setGenerating(true);
         try {
             const res = await pmAPI.generateRetrospective();
             if (res?.ok) {
@@ -52,11 +60,13 @@ export default function PMRetrospective() {
         } catch (err) {
             console.error('Retrospective generation failed:', err);
         } finally {
-            setLoading(false);
+            setGenerating(false);
         }
     };
 
-    const retroData = retroSummary;
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading retrospective...</div>;
+
+    const retroData = retroSummary || { sprintName: 'N/A', completionPct: 0, alignmentAvg: 0, behaviourAvg: 0, bottleneck: 'None' };
 
     return (
         <div>
@@ -87,9 +97,9 @@ export default function PMRetrospective() {
                                 <Brain size={14} /> {showCoT ? 'Hide CoT' : 'Show Chain-of-Thought'}
                             </button>
                         )}
-                        <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}
+                        <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}
                             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontWeight: 700, fontSize: '0.88rem' }}>
-                            {loading ? <><Loader2 size={16} className="spin" /> Analysing...</> : <><RefreshCw size={16} /> Generate Retrospective</>}
+                            {generating ? <><Loader2 size={16} className="spin" /> Analysing...</> : <><RefreshCw size={16} /> Generate Retrospective</>}
                         </button>
                     </div>
                 </div>

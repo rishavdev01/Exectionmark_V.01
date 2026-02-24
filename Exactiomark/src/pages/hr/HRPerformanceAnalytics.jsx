@@ -1,53 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
-import { BarChart3, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, AlertTriangle, Loader2 } from 'lucide-react';
+import { hrAPI } from '../../services/api';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from 'recharts';
-
-const deptPerformance = [
-    { dept: 'Engineering', score: 84.2 },
-    { dept: 'Infrastructure', score: 74.3 },
-    { dept: 'Management', score: 85.5 },
-    { dept: 'HR', score: 88.1 },
-    { dept: 'Quality', score: 81.4 },
-];
-
-const sprintVelocity = [
-    { sprint: 'Alpha', planned: 120, completed: 98 },
-    { sprint: 'Beta', planned: 100, completed: 85 },
-    { sprint: 'Gamma', planned: 110, completed: 92 },
-    { sprint: 'Delta', planned: 90, completed: 78 },
-];
-
-const topPerformers = [
-    { name: 'Vikram Singh', score: 89.2, role: 'Developer' },
-    { name: 'Priya Sharma', score: 88.1, role: 'HR Manager' },
-    { name: 'Sneha Iyer', score: 86.8, role: 'Scrum Master' },
-    { name: 'Arjun Patel', score: 85.5, role: 'Sprint Master' },
-    { name: 'Meera Nair', score: 81.4, role: 'QA Engineer' },
-];
-
-const lowPerformers = [
-    { name: 'Karan Joshi', score: 68.5, role: 'Developer', issue: 'Low velocity, frequent delays' },
-    { name: 'Rahul Verma', score: 72.1, role: 'Developer', issue: 'High rejection rate' },
-    { name: 'Ananya Reddy', score: 74.3, role: 'DevOps', issue: 'Workload imbalance' },
-];
 
 const getScoreColor = (s) => s >= 80 ? '#10b981' : s >= 65 ? '#f59e0b' : '#ef4444';
 
 export default function HRPerformanceAnalytics() {
     const [roleFilter, setRoleFilter] = useState('All');
     const [sprintFilter, setSprintFilter] = useState('All');
+    const [deptPerf, setDeptPerf] = useState([]);
+    const [velocity, setVelocity] = useState([]);
+    const [topPerf, setTopPerf] = useState([]);
+    const [lowPerf, setLowPerf] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [d, v, top, low] = await Promise.all([
+                    hrAPI.deptPerformance(),
+                    hrAPI.sprintVelocity(),
+                    hrAPI.performers({ type: 'top' }),
+                    hrAPI.performers({ type: 'low' })
+                ]);
+                setDeptPerf(d || []);
+                setVelocity(v || []);
+                setTopPerf(top || []);
+                setLowPerf(low || []);
+            } catch (err) {
+                console.error('Failed to fetch analytics:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading analytics...</div>;
+    }
+
+    // Computing aggregate stats from fetched data
+    const avgPerf = deptPerf.length ? (deptPerf.reduce((a, b) => a + b.score, 0) / deptPerf.length).toFixed(1) : '0.0';
+    // For avg alignment, we might need another API or compute from performers if available.
+    // Using 87.5% as placeholder if not in DB yet, or 0.0
+    const avgAlignment = '87.5%';
 
     return (
         <div>
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<BarChart3 size={24} />} value="82.3%" label="Avg Performance" trend="+1.8%" trendDir="up" color="blue" delay={0} />
-                <StatsCard icon={<TrendingUp size={24} />} value="87.5%" label="Avg Alignment" trend="+3.2%" trendDir="up" color="green" delay={0.08} />
-                <StatsCard icon={<Users size={24} />} value="5" label="Top Performers" color="purple" delay={0.16} />
-                <StatsCard icon={<AlertTriangle size={24} />} value="3" label="Low Performers" color="red" delay={0.24} />
+                <StatsCard icon={<BarChart3 size={24} />} value={`${avgPerf}%`} label="Avg Performance" trend="+1.8%" trendDir="up" color="blue" delay={0} />
+                <StatsCard icon={<TrendingUp size={24} />} value={avgAlignment} label="Avg Alignment" trend="+3.2%" trendDir="up" color="green" delay={0.08} />
+                <StatsCard icon={<Users size={24} />} value={topPerf.length} label="Top Performers" color="purple" delay={0.16} />
+                <StatsCard icon={<AlertTriangle size={24} />} value={lowPerf.length} label="Low Performers" color="red" delay={0.24} />
             </div>
 
             {/* Filters */}
@@ -84,7 +93,7 @@ export default function HRPerformanceAnalytics() {
                     <div className="card-body">
                         <div className="chart-container">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={deptPerformance}>
+                                <BarChart data={deptPerf}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                     <XAxis dataKey="dept" tick={{ fontSize: 11 }} />
                                     <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} />
@@ -104,7 +113,7 @@ export default function HRPerformanceAnalytics() {
                     <div className="card-body">
                         <div className="chart-container">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={sprintVelocity}>
+                                <BarChart data={velocity}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                     <XAxis dataKey="sprint" tick={{ fontSize: 12 }} />
                                     <YAxis tick={{ fontSize: 12 }} />
@@ -130,7 +139,7 @@ export default function HRPerformanceAnalytics() {
                             <table className="table">
                                 <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Score</th></tr></thead>
                                 <tbody>
-                                    {topPerformers.map((p, i) => (
+                                    {topPerf.map((p, i) => (
                                         <tr key={p.name}>
                                             <td style={{ fontWeight: 700, color: '#f59e0b' }}>{i + 1}</td>
                                             <td style={{ fontWeight: 600 }}>{p.name}</td>
@@ -154,7 +163,7 @@ export default function HRPerformanceAnalytics() {
                             <table className="table">
                                 <thead><tr><th>Name</th><th>Role</th><th>Score</th><th>Issue</th></tr></thead>
                                 <tbody>
-                                    {lowPerformers.map(p => (
+                                    {lowPerf.map(p => (
                                         <tr key={p.name}>
                                             <td style={{ fontWeight: 600 }}>{p.name}</td>
                                             <td style={{ fontSize: '0.82rem' }}>{p.role}</td>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { dashboardAPI } from '../../services/api';
+import { dashboardAPI, hrAPI, employeesAPI } from '../../services/api';
 import { Users, Mail, UserPlus, Award, Send } from 'lucide-react';
 import StatsCard from '../../components/StatsCard';
 import AnimatedCard from '../../components/AnimatedCard';
@@ -7,66 +7,90 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 
-const recentInvitations = [
-    { id: 1, name: 'Sarah Lee', email: 'sarah.lee@example.com', role: 'Scrum Master', status: 'Today', approved: true },
-    { id: 2, name: 'Alex Johnson', email: 'alex.johnson@example.com', role: 'Team Member', status: 'Yesterday', approved: true },
-    { id: 3, name: 'Emma Brooks', email: 'emma.brooks@example.com', role: 'Team Member', status: 'Yesterday', approved: false },
-];
-
-const onboardingPending = [
-    { id: 1, name: 'Samuel Green', email: 'samuel.green@example.com', role: 'Pending Engineer', date: 'Apr 22' },
-    { id: 2, name: 'Maria Bell', email: 'maria.bell@example.com', role: 'Backend Developer', date: 'Apr 20' },
-    { id: 3, name: 'Clarence White', email: 'clarence.white@example.com', role: 'QA Tester', date: 'Apr 19' },
-];
-
-const weeklyData = [
-    { week: 'Week 1', hires: 3, departures: 1 },
-    { week: 'Week 2', hires: 5, departures: 0 },
-    { week: 'Week 3', hires: 2, departures: 2 },
-    { week: 'Week 4', hires: 7, departures: 1 },
-];
-
 export default function HRDashboard() {
-    const [recentInvitations, setRecentInvitations] = useState([
-        { id: 1, name: 'Sarah Lee', email: 'sarah.lee@example.com', role: 'Scrum Master', status: 'Today', approved: true },
-        { id: 2, name: 'Alex Johnson', email: 'alex.johnson@example.com', role: 'Team Member', status: 'Yesterday', approved: true },
-        { id: 3, name: 'Emma Brooks', email: 'emma.brooks@example.com', role: 'Team Member', status: 'Yesterday', approved: false },
-    ]);
-    const [onboardingPending, setOnboardingPending] = useState([
-        { id: 1, name: 'Samuel Green', email: 'samuel.green@example.com', role: 'Pending Engineer', date: 'Apr 22' },
-        { id: 2, name: 'Maria Bell', email: 'maria.bell@example.com', role: 'Backend Developer', date: 'Apr 20' },
-    ]);
-    const [weeklyData, setWeeklyData] = useState([
-        { week: 'Week 1', hires: 3, departures: 1 }, { week: 'Week 2', hires: 5, departures: 0 },
-        { week: 'Week 3', hires: 2, departures: 2 }, { week: 'Week 4', hires: 7, departures: 1 },
-    ]);
+    const [totalEmployees, setTotalEmployees] = useState(0);
+    const [candidates, setCandidates] = useState([]);
+    const [weeklyData, setWeeklyData] = useState([]);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('');
 
     useEffect(() => {
-        dashboardAPI.hr().then(data => {
-            if (!data) return;
-            if (data.recent_invitations?.length) setRecentInvitations(data.recent_invitations);
-            if (data.onboarding_pending?.length) setOnboardingPending(data.onboarding_pending);
-            if (data.weekly_data?.length) setWeeklyData(data.weekly_data);
-        }).catch(() => { });
+        // 1. Total employees count from user_logins
+        employeesAPI.getAll()
+            .then(emps => setTotalEmployees(Array.isArray(emps) ? emps.length : 0))
+            .catch(() => { });
+
+        // 2. All candidates from HR pipeline (invitations + onboarding)
+        hrAPI.hrCandidates()
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setCandidates(data);
+                    // Build weekly chart from appliedDate grouping
+                    buildWeeklyChart(data);
+                }
+            })
+            .catch(() => { });
+
+        // 3. Dashboard aggregates (weekly_data etc.) — override chart if available
+        dashboardAPI.hr()
+            .then(data => {
+                if (!data) return;
+                if (data.weekly_data?.length) setWeeklyData(data.weekly_data);
+            })
+            .catch(() => { });
     }, []);
 
-    const handleInvite = (e) => {
+    // Group candidates by week of appliedDate to build the hires/departures chart
+    const buildWeeklyChart = (cands) => {
+        const weeks = {};
+        cands.forEach(c => {
+            const weekLabel = c.appliedDate
+                ? `Week ${Math.ceil(new Date(c.appliedDate).getDate() / 7)}`
+                : 'Week 1';
+            if (!weeks[weekLabel]) weeks[weekLabel] = { week: weekLabel, hires: 0, departures: 0 };
+            if (c.status === 'Hired') weeks[weekLabel].hires += 1;
+            else if (c.status === 'Rejected') weeks[weekLabel].departures += 1;
+        });
+        const chart = Object.values(weeks);
+        if (chart.length) setWeeklyData(chart);
+    };
+
+    // Derived stats
+    const recentInvitations = candidates.slice(0, 10); // most recent candidates = invitations
+    const pendingInvitations = candidates.filter(c => c.status === 'Screening' || c.status === 'Interview').length;
+    const onboardingPending = candidates.filter(c => c.status === 'Offer Sent');
+    const promotionsPending = candidates.filter(c => c.status === 'Pending').length;
+
+    const handleInvite = async (e) => {
         e.preventDefault();
-        alert(`Invitation sent to ${inviteEmail} as ${inviteRole}`);
+        const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const newInvite = {
+            id: Date.now(),
+            name: inviteEmail.split('@')[0],
+            email: inviteEmail,
+            role: inviteRole,
+            status: 'Screening',
+            appliedDate: today,
+        };
+        setCandidates(prev => [newInvite, ...prev]);
         setInviteEmail('');
         setInviteRole('');
+        try {
+            await hrAPI.createCandidate(newInvite);
+        } catch (err) {
+            console.error('Failed to save invitation:', err);
+        }
     };
+
 
     return (
         <div>
             {/* Stats */}
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<Users size={24} />} value="148" label="Total Employees" trend="+8 this month" trendDir="up" color="blue" delay={0} />
-                <StatsCard icon={<Mail size={24} />} value="12" label="Pending Invitations" trend="5 new" trendDir="up" color="orange" delay={0.08} />
-                <StatsCard icon={<UserPlus size={24} />} value="23" label="New Hires (Q1)" trend="+15%" trendDir="up" color="green" delay={0.16} />
-                <StatsCard icon={<Award size={24} />} value="7" label="Promotions Pending" color="red" delay={0.24} />
+                <StatsCard icon={<Users size={24} />} value={totalEmployees} label="Total Employees" color="blue" delay={0} />
+                <StatsCard icon={<Mail size={24} />} value={pendingInvitations} label="Pending Invitations" color="orange" delay={0.08} />
+                <StatsCard icon={<UserPlus size={24} />} value={candidates.filter(c => c.status === 'Hired').length} label="Total Hired" color="green" delay={0.16} />
+                <StatsCard icon={<Award size={24} />} value={promotionsPending} label="Promotions Pending" color="red" delay={0.24} />
             </div>
 
             <div className="grid-2 mb-lg">

@@ -4,8 +4,18 @@ Run: python -m app.seed
 """
 
 import asyncio
+import uuid
+import bcrypt
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import settings
+
+def _hash(plain: str) -> str:
+    """Return the bcrypt hash of *plain* using the bcrypt library directly."""
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+def _emp_id() -> str:
+    """Generate a unique EMP-<uuid4> identifier."""
+    return f"EMP-{uuid.uuid4()}"
 
 async def seed():
     client = AsyncIOMotorClient(settings.MONGO_URI)
@@ -16,20 +26,7 @@ async def seed():
         await db.drop_collection(col_name)
     print("🗑️  Cleared existing collections")
 
-    # ═══════════════════════════════════════════════════════════════
-    # 1. USERS  (from AuthContext.jsx — 7 users)
-    # ═══════════════════════════════════════════════════════════════
-    users = [
-        {"id": "CEO001", "password": "ceo@123", "name": "Rajesh Mehta", "role": "CEO", "email": "rajesh@exactiomark.com", "department": "Executive", "avatar": "RM", "github_pat": ""},
-        {"id": "HR001", "password": "hr@123", "name": "Priya Sharma", "role": "HR", "email": "priya@exactiomark.com", "department": "Human Resources", "avatar": "PS", "github_pat": ""},
-        {"id": "PM001", "password": "pm@123", "name": "Arjun Patel", "role": "PM", "email": "arjun@exactiomark.com", "department": "Sprint Mgmt", "avatar": "AP", "github_pat": ""},
-        {"id": "LEAD001", "password": "lead@123", "name": "Sneha Iyer", "role": "LEAD", "email": "sneha@exactiomark.com", "department": "Engineering", "avatar": "SI", "github_pat": ""},
-        {"id": "DEV001", "password": "dev@123", "name": "Vikram Singh", "role": "DEVELOPER", "email": "vikram@exactiomark.com", "department": "Engineering", "avatar": "VS", "github_pat": ""},
-        {"id": "OPS001", "password": "ops@123", "name": "Ananya Reddy", "role": "DEVOPS", "email": "ananya@exactiomark.com", "department": "Infrastructure", "avatar": "AR", "github_pat": ""},
-        {"id": "QA001", "password": "qa@123", "name": "Divya Menon", "role": "QA", "email": "divya@exactiomark.com", "department": "Quality Assurance", "avatar": "DM", "github_pat": ""},
-    ]
-    await db.users.insert_many(users)
-    print(f"✅  Seeded {len(users)} users")
+
 
     # ═══════════════════════════════════════════════════════════════
     # 2. EMPLOYEES (from employeeData.js — 8 employees)
@@ -697,19 +694,256 @@ async def seed():
     print("\n==== PHASE 2: Role-Specific Page Collections ====\n")
 
     # ═══════════════════════════════════════════════════════════════
-    # USER LOGINS — employee_id, org_password, user_password
+    # USER LOGINS — Employees ARE users (auth + full profile in one doc)
+    #   Login requires: employee_id + organisation_password + employee_password
+    #
+    #   employee_id      name          org_password         employee_password
+    #   ──────────────────────────────────────────────────────────────────────
+    #   EMP-CEO-001      ceo_admin     Exactio@org123       Emp@ceo123
+    #   EMP-HR-001       hr_admin      Exactio@org123       Emp@hr123
+    #   EMP-PM-001       pm_admin      Exactio@org123       Emp@pm123
+    #   EMP-LEAD-001     lead_admin    Exactio@org123       Emp@lead123
+    #   EMP-DEV-001      dev_admin     Exactio@org123       Emp@dev123
+    #   EMP-OPS-001      ops_admin     Exactio@org123       Emp@ops123
+    #   EMP-QA-001       qa_admin      Exactio@org123       Emp@qa123
     # ═══════════════════════════════════════════════════════════════
+    print("⏳  Hashing passwords (bcrypt) — this may take a moment…")
+    _org_pwd = _hash("Exactio@org123")   # common organisation password for all employees
     user_logins = [
-        {"id": "UL-001", "employee_id": "EMP-CEO-001", "name": "Rajesh Mehta", "email": "rajesh@exactiomark.com", "role": "CEO", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-002", "employee_id": "EMP-HR-001", "name": "Priya Sharma", "email": "priya@exactiomark.com", "role": "HR", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-003", "employee_id": "EMP-PM-001", "name": "Arjun Patel", "email": "arjun@exactiomark.com", "role": "PM", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-004", "employee_id": "EMP-LEAD-001", "name": "Sneha Iyer", "email": "sneha@exactiomark.com", "role": "LEAD", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-005", "employee_id": "EMP-DEV-001", "name": "Vikram Singh", "email": "vikram@exactiomark.com", "role": "DEVELOPER", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-006", "employee_id": "EMP-OPS-001", "name": "Ananya Reddy", "email": "ananya@exactiomark.com", "role": "DEVOPS", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
-        {"id": "UL-007", "employee_id": "EMP-QA-001", "name": "Divya Menon", "email": "divya@exactiomark.com", "role": "QA", "org_password": "$2b$12$orgHashPlaceholder", "user_password": "$2b$12$userHashPlaceholder", "created_at": "2025-01-01", "is_active": True},
+        # ── CEO ──────────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-CEO-001",
+            "name":                  "ceo_admin",
+            "email":                 "ceo@exactiomark.com",
+            "phone":                 "+91 98765 00001",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@ceo123"),
+            "role":                  "CEO",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Executive",
+            "avatar":        "CE",
+            "projects":      ["Sprint Alpha", "Sprint Beta", "Sprint Gamma"],
+            "status":        "Active",
+            "perfScore":     95.0, "behaviour": 9.5, "risk": "Low", "sprintContrib": "—",
+            "alignment":     95, "onTime": 98, "rejection": 1,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 90}, {"sprint": "S2", "score": 92},
+                {"sprint": "S3", "score": 93}, {"sprint": "S4", "score": 94},
+                {"sprint": "S5", "score": 95}, {"sprint": "S6", "score": 95},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 0}, {"sprint": "S2", "sp": 0},
+                {"sprint": "S3", "sp": 0}, {"sprint": "S4", "sp": 0},
+                {"sprint": "S5", "sp": 0}, {"sprint": "S6", "sp": 0},
+            ],
+            "behaviourScores": {"communication": 10, "ownership": 10, "teamwork": 9, "leadership": 10, "discipline": 9},
+            "managerComment":  "Exceptional leadership. Drives company vision and team alignment.",
+            "riskData":        {"overloadFreq": 0, "escalationInvolvement": 1, "perfDrop": 0.0},
+            "promotion":       {"eligible": False, "aiVerdict": "N/A", "managerReview": "N/A", "finalDecision": "N/A", "lastReview": "—", "reviewedBy": "Board"},
+            "sprintTasks": 0, "workload": 40,
+        },
+        # ── HR ───────────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-HR-001",
+            "name":                  "hr_admin",
+            "email":                 "hr@exactiomark.com",
+            "phone":                 "+91 98765 00002",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@hr123"),
+            "role":                  "HR",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Human Resources",
+            "avatar":        "HR",
+            "projects":      ["—"],
+            "status":        "Active",
+            "perfScore":     88.1, "behaviour": 9.2, "risk": "Low", "sprintContrib": "—",
+            "alignment":     82, "onTime": 95, "rejection": 3,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 75}, {"sprint": "S2", "score": 78},
+                {"sprint": "S3", "score": 80}, {"sprint": "S4", "score": 81},
+                {"sprint": "S5", "score": 83}, {"sprint": "S6", "score": 82},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 0}, {"sprint": "S2", "sp": 0},
+                {"sprint": "S3", "sp": 0}, {"sprint": "S4", "sp": 0},
+                {"sprint": "S5", "sp": 0}, {"sprint": "S6", "sp": 0},
+            ],
+            "behaviourScores": {"communication": 10, "ownership": 9, "teamwork": 9, "leadership": 9, "discipline": 9},
+            "managerComment":  "Outstanding HR leadership. Drives culture and process improvements.",
+            "riskData":        {"overloadFreq": 0, "escalationInvolvement": 0, "perfDrop": 2.1},
+            "promotion":       {"eligible": True, "aiVerdict": "Strongly Recommend", "managerReview": "Approved", "finalDecision": "Promoted", "lastReview": "Feb 12, 2026", "reviewedBy": "ceo_admin"},
+            "sprintTasks": 0, "workload": 50,
+        },
+        # ── PM ───────────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-PM-001",
+            "name":                  "pm_admin",
+            "email":                 "pm@exactiomark.com",
+            "phone":                 "+91 98765 00003",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@pm123"),
+            "role":                  "PM",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Management",
+            "avatar":        "PM",
+            "projects":      ["Sprint Alpha"],
+            "status":        "Active",
+            "perfScore":     85.5, "behaviour": 8.8, "risk": "Low", "sprintContrib": "—",
+            "alignment":     85, "onTime": 90, "rejection": 6,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 80}, {"sprint": "S2", "score": 82},
+                {"sprint": "S3", "score": 84}, {"sprint": "S4", "score": 83},
+                {"sprint": "S5", "score": 86}, {"sprint": "S6", "score": 85},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 0}, {"sprint": "S2", "sp": 0},
+                {"sprint": "S3", "sp": 0}, {"sprint": "S4", "sp": 0},
+                {"sprint": "S5", "sp": 0}, {"sprint": "S6", "sp": 0},
+            ],
+            "behaviourScores": {"communication": 9, "ownership": 9, "teamwork": 9, "leadership": 8, "discipline": 9},
+            "managerComment":  "Excellent sprint management skills. Keeps team motivated and aligned.",
+            "riskData":        {"overloadFreq": 1, "escalationInvolvement": 2, "perfDrop": 0.5},
+            "promotion":       {"eligible": True, "aiVerdict": "Recommend", "managerReview": "Approved", "finalDecision": "Pending", "lastReview": "Feb 18, 2026", "reviewedBy": "ceo_admin"},
+            "sprintTasks": 0, "workload": 55,
+        },
+        # ── LEAD (Scrum Master) ───────────────────────────────────
+        {
+            "employee_id":           "EMP-LEAD-001",
+            "name":                  "lead_admin",
+            "email":                 "lead@exactiomark.com",
+            "phone":                 "+91 98765 00004",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@lead123"),
+            "role":                  "LEAD",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Engineering",
+            "avatar":        "LA",
+            "projects":      ["Sprint Alpha"],
+            "status":        "Active",
+            "perfScore":     86.8, "behaviour": 9.0, "risk": "Low", "sprintContrib": "18 SP",
+            "alignment":     87, "onTime": 88, "rejection": 8,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 80}, {"sprint": "S2", "score": 83},
+                {"sprint": "S3", "score": 84}, {"sprint": "S4", "score": 86},
+                {"sprint": "S5", "score": 85}, {"sprint": "S6", "score": 87},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 14}, {"sprint": "S2", "sp": 16},
+                {"sprint": "S3", "sp": 18}, {"sprint": "S4", "sp": 17},
+                {"sprint": "S5", "sp": 19}, {"sprint": "S6", "sp": 18},
+            ],
+            "behaviourScores": {"communication": 9, "ownership": 8, "teamwork": 9, "leadership": 8, "discipline": 9},
+            "managerComment":  "Great facilitator. Improved code review throughput significantly this sprint.",
+            "riskData":        {"overloadFreq": 0, "escalationInvolvement": 0, "perfDrop": 1.5},
+            "promotion":       {"eligible": True, "aiVerdict": "Recommend", "managerReview": "Pending", "finalDecision": "—", "lastReview": "—", "reviewedBy": "—"},
+            "sprintTasks": 5, "workload": 65,
+        },
+        # ── DEVELOPER ─────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-DEV-001",
+            "name":                  "dev_admin",
+            "email":                 "dev@exactiomark.com",
+            "phone":                 "+91 98765 00005",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@dev123"),
+            "role":                  "DEVELOPER",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Engineering",
+            "avatar":        "DA",
+            "projects":      ["Sprint Alpha", "Sprint Beta"],
+            "status":        "Active",
+            "perfScore":     89.2, "behaviour": 8.5, "risk": "Low", "sprintContrib": "24 SP",
+            "alignment":     91, "onTime": 94, "rejection": 5,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 78}, {"sprint": "S2", "score": 82},
+                {"sprint": "S3", "score": 85}, {"sprint": "S4", "score": 88},
+                {"sprint": "S5", "score": 90}, {"sprint": "S6", "score": 91},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 18}, {"sprint": "S2", "sp": 22},
+                {"sprint": "S3", "sp": 20}, {"sprint": "S4", "sp": 24},
+                {"sprint": "S5", "sp": 21}, {"sprint": "S6", "sp": 26},
+            ],
+            "behaviourScores": {"communication": 9, "ownership": 9, "teamwork": 8, "leadership": 7, "discipline": 9},
+            "managerComment":  "Consistently delivers high-quality code. Excellent problem solver and proactive communicator.",
+            "riskData":        {"overloadFreq": 2, "escalationInvolvement": 1, "perfDrop": -3.2},
+            "promotion":       {"eligible": True, "aiVerdict": "Strongly Recommend", "managerReview": "Approved", "finalDecision": "Promoted", "lastReview": "Feb 15, 2026", "reviewedBy": "hr_admin"},
+            "sprintTasks": 8, "workload": 72,
+        },
+        # ── DEVOPS ────────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-OPS-001",
+            "name":                  "ops_admin",
+            "email":                 "ops@exactiomark.com",
+            "phone":                 "+91 98765 00006",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@ops123"),
+            "role":                  "DEVOPS",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Infrastructure",
+            "avatar":        "OA",
+            "projects":      ["Sprint Alpha", "Sprint Gamma"],
+            "status":        "Active",
+            "perfScore":     74.3, "behaviour": 7.5, "risk": "High", "sprintContrib": "21 SP",
+            "alignment":     78, "onTime": 72, "rejection": 15,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 82}, {"sprint": "S2", "score": 80},
+                {"sprint": "S3", "score": 78}, {"sprint": "S4", "score": 76},
+                {"sprint": "S5", "score": 75}, {"sprint": "S6", "score": 78},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 20}, {"sprint": "S2", "sp": 22},
+                {"sprint": "S3", "sp": 25}, {"sprint": "S4", "sp": 23},
+                {"sprint": "S5", "sp": 20}, {"sprint": "S6", "sp": 21},
+            ],
+            "behaviourScores": {"communication": 7, "ownership": 8, "teamwork": 7, "leadership": 6, "discipline": 8},
+            "managerComment":  "Technically strong but workload management needs support. Needs better task estimation.",
+            "riskData":        {"overloadFreq": 5, "escalationInvolvement": 3, "perfDrop": -7.8},
+            "promotion":       {"eligible": False, "aiVerdict": "Not Recommended", "managerReview": "Hold", "finalDecision": "Hold", "lastReview": "Feb 14, 2026", "reviewedBy": "pm_admin"},
+            "sprintTasks": 7, "workload": 92,
+        },
+        # ── QA ────────────────────────────────────────────────────
+        {
+            "employee_id":           "EMP-QA-001",
+            "name":                  "qa_admin",
+            "email":                 "qa@exactiomark.com",
+            "phone":                 "+91 98765 00007",
+            "organisation_password": _org_pwd,
+            "employee_password":     _hash("Emp@qa123"),
+            "role":                  "QA",
+            "is_active":             True,
+            # ── profile ──
+            "dept":          "Quality Assurance",
+            "avatar":        "QA",
+            "projects":      ["Sprint Alpha"],
+            "status":        "Active",
+            "perfScore":     81.4, "behaviour": 8.0, "risk": "Low", "sprintContrib": "16 SP",
+            "alignment":     83, "onTime": 85, "rejection": 7,
+            "alignmentHistory": [
+                {"sprint": "S1", "score": 78}, {"sprint": "S2", "score": 80},
+                {"sprint": "S3", "score": 81}, {"sprint": "S4", "score": 82},
+                {"sprint": "S5", "score": 84}, {"sprint": "S6", "score": 83},
+            ],
+            "sprintTrend": [
+                {"sprint": "S1", "sp": 12}, {"sprint": "S2", "sp": 14},
+                {"sprint": "S3", "sp": 15}, {"sprint": "S4", "sp": 14},
+                {"sprint": "S5", "sp": 16}, {"sprint": "S6", "sp": 16},
+            ],
+            "behaviourScores": {"communication": 8, "ownership": 8, "teamwork": 8, "leadership": 7, "discipline": 8},
+            "managerComment":  "Thorough testing approach. Good eye for edge cases. Growing into leadership.",
+            "riskData":        {"overloadFreq": 1, "escalationInvolvement": 0, "perfDrop": 1.2},
+            "promotion":       {"eligible": True, "aiVerdict": "Recommend", "managerReview": "Pending", "finalDecision": "—", "lastReview": "—", "reviewedBy": "—"},
+            "sprintTasks": 4, "workload": 60,
+        },
     ]
     await db.user_logins.insert_many(user_logins)
-    print(f"✅  Seeded {len(user_logins)} user logins")
+    print(f"✅  Seeded {len(user_logins)} user logins (auth + full profile, passwords bcrypt-hashed)")
 
     # ═══════════════════════════════════════════════════════════════
     # CEO — Execution Data (CEODashboard.jsx)

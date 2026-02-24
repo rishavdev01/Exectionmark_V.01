@@ -5,69 +5,27 @@ import StatsCard from '../../components/StatsCard';
 import AnimatedCard from '../../components/AnimatedCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-const pipelines = [
-    { id: 1, name: 'alpha-backend CI', status: 'Running', branch: 'main', duration: '3m 42s', triggered: '5m ago' },
-    { id: 2, name: 'gamma-frontend CI', status: 'Passed', branch: 'main', duration: '2m 18s', triggered: '1h ago' },
-    { id: 3, name: 'beta-service CD', status: 'Failed', branch: 'release/v2', duration: '5m 01s', triggered: '2h ago' },
-    { id: 4, name: 'infra-terraform', status: 'Passed', branch: 'main', duration: '1m 55s', triggered: '3h ago' },
-];
-
-const deployments = [
-    { id: 1, service: 'alpha-backend', env: 'Production', version: 'v2.4.1', time: '2h ago', status: 'Success' },
-    { id: 2, service: 'gamma-frontend', env: 'Staging', version: 'v1.8.0', time: '4h ago', status: 'Success' },
-    { id: 3, service: 'beta-service', env: 'Production', version: 'v3.1.0', time: '1d ago', status: 'Rolled Back' },
-];
-
-const healthData = [
-    { service: 'API Gateway', cpu: 45, memory: 62, uptime: 99.9 },
-    { service: 'Auth Service', cpu: 32, memory: 48, uptime: 99.99 },
-    { service: 'DB Primary', cpu: 68, memory: 78, uptime: 99.95 },
-    { service: 'Cache Redis', cpu: 15, memory: 55, uptime: 100 },
-];
-
-const alerts = [
-    { id: 1, msg: 'High memory usage on DB Primary (78%)', level: 'warning', time: '10m ago' },
-    { id: 2, msg: 'Pipeline beta-service CD failed', level: 'danger', time: '2h ago' },
-    { id: 3, msg: 'SSL certificate renews in 7 days', level: 'info', time: '6h ago' },
-    { id: 4, msg: 'Auto-scaling triggered on API Gateway', level: 'warning', time: '1d ago' },
-];
-
 const pStat = { Running: 'badge-info', Passed: 'badge-success', Failed: 'badge-danger' };
 
 export default function DevOpsDashboard() {
-    const [pipelines, setPipelines] = useState([
-        { id: 1, name: 'alpha-backend CI', status: 'Running', branch: 'main', duration: '3m 42s', triggered: '5m ago' },
-        { id: 2, name: 'gamma-frontend CI', status: 'Passed', branch: 'main', duration: '2m 18s', triggered: '1h ago' },
-        { id: 3, name: 'beta-service CD', status: 'Failed', branch: 'release/v2', duration: '5m 01s', triggered: '2h ago' },
-        { id: 4, name: 'infra-terraform', status: 'Passed', branch: 'main', duration: '1m 55s', triggered: '3h ago' },
-    ]);
-    const [deployments, setDeployments] = useState([
-        { id: 1, service: 'alpha-backend', env: 'Production', version: 'v2.4.1', time: '2h ago', status: 'Success' },
-        { id: 2, service: 'gamma-frontend', env: 'Staging', version: 'v1.8.0', time: '4h ago', status: 'Success' },
-        { id: 3, service: 'beta-service', env: 'Production', version: 'v3.1.0', time: '1d ago', status: 'Rolled Back' },
-    ]);
-    const [healthData, setHealthData] = useState([
-        { service: 'API Gateway', cpu: 45, memory: 62, uptime: 99.9 },
-        { service: 'Auth Service', cpu: 32, memory: 48, uptime: 99.99 },
-        { service: 'DB Primary', cpu: 68, memory: 78, uptime: 99.95 },
-        { service: 'Cache Redis', cpu: 15, memory: 55, uptime: 100 },
-    ]);
-    const [alerts, setAlerts] = useState([
-        { id: 1, msg: 'High memory usage on DB Primary (78%)', level: 'warning', time: '10m ago' },
-        { id: 2, msg: 'Pipeline beta-service CD failed', level: 'danger', time: '2h ago' },
-        { id: 3, msg: 'SSL certificate renews in 7 days', level: 'info', time: '6h ago' },
-        { id: 4, msg: 'Auto-scaling triggered on API Gateway', level: 'warning', time: '1d ago' },
-    ]);
+    const [pipelines, setPipelines] = useState([]);
+    const [deployments, setDeployments] = useState([]);
+    const [healthData, setHealthData] = useState([]);
+    const [alerts, setAlerts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         dashboardAPI.devops().then(data => {
             if (!data) return;
-            if (data.pipelines?.length) setPipelines(data.pipelines);
-            if (data.deployments?.length) setDeployments(data.deployments);
-            if (data.health_data?.length) setHealthData(data.health_data);
-            if (data.alerts?.length) setAlerts(data.alerts);
-        }).catch(() => { });
+            if (data.pipelines) setPipelines(data.pipelines);
+            if (data.deployments) setDeployments(data.deployments);
+            if (data.health_data) setHealthData(data.health_data);
+            if (data.alerts) setAlerts(data.alerts);
+        }).catch(err => console.error('Failed to fetch DevOps dashboard:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading dashboard...</div>;
 
     const avgUptimeVal = healthData.length ? (healthData.reduce((acc, h) => acc + (h.uptime || 0), 0) / healthData.length).toFixed(2) : '99.9';
     const runningPipelines = pipelines.filter(p => p.status === 'Running').length;

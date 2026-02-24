@@ -4,79 +4,6 @@ import StatsCard from '../../components/StatsCard';
 import { CheckSquare, AlertTriangle, Clock, Cpu, X, GitBranch, MessageSquare } from 'lucide-react';
 import { devAPI } from '../../services/api';
 
-const tasks = [
-    {
-        id: 'ST-201', story: 'Implement OAuth2 Login Flow', sprint: 'Sprint 12', priority: 'High', status: 'In Progress',
-        alignment: 91, due: 'Feb 22', risk: 'Low', module: 'Auth Service', points: 8,
-        acceptance: ['User can log in via Google OAuth2', 'Token refresh works silently', 'Session persists across tabs'],
-        description: 'Build the full OAuth2 authentication flow including Google provider integration, token management, and session persistence. Must handle edge cases like expired tokens and concurrent sessions.',
-        repo: 'alpha-backend', branch: 'feature/oauth2-flow',
-        aiBreakdown: { keyword: 94, filePath: 88, semantic: 91, scopeDrift: 4 },
-        comments: [
-            { author: 'Sneha Iyer', text: 'Looks good overall. Add error handling for token refresh failures.', time: '2h ago' },
-            { author: 'AI Review', text: 'High alignment. Consider adding rate limiting on the token endpoint.', time: '1h ago' },
-        ]
-    },
-    {
-        id: 'ST-202', story: 'Write Unit Tests for Payments', sprint: 'Sprint 12', priority: 'Medium', status: 'To Do',
-        alignment: 78, due: 'Feb 24', risk: 'Medium', module: 'Payment Gateway', points: 5,
-        acceptance: ['Cover all payment methods (card, UPI, wallet)', 'Edge cases for failed transactions', 'Minimum 85% coverage'],
-        description: 'Write comprehensive unit tests for the payment processing module. Cover success/failure paths for all supported payment methods. Include mock gateway responses.',
-        repo: 'alpha-backend', branch: 'test/payment-unit-tests',
-        aiBreakdown: { keyword: 82, filePath: 75, semantic: 78, scopeDrift: 12 },
-        comments: [
-            { author: 'Karan Joshi', text: 'Make sure to mock the Razorpay webhook handler.', time: '4h ago' },
-        ]
-    },
-    {
-        id: 'ST-203', story: 'Refactor Notification Service', sprint: 'Sprint 11', priority: 'Low', status: 'In Review',
-        alignment: 85, due: 'Feb 20', risk: 'Low', module: 'Notifications', points: 3,
-        acceptance: ['Decouple email and push notification logic', 'Add retry mechanism for failed sends', 'Maintain backward compatibility'],
-        description: 'Refactor the monolithic notification service into separate handlers for email, push, and in-app notifications. Implement exponential backoff retry for failed deliveries.',
-        repo: 'beta-service', branch: 'refactor/notifications-v2',
-        aiBreakdown: { keyword: 89, filePath: 82, semantic: 85, scopeDrift: 6 },
-        comments: [
-            { author: 'Vikram Singh', text: 'Clean refactor. Approved after adding retry tests.', time: '1d ago' },
-            { author: 'AI Review', text: 'Good separation of concerns. Retry backoff config should be externalized.', time: '6h ago' },
-        ]
-    },
-    {
-        id: 'ST-204', story: 'Fix Pagination on Dashboard', sprint: 'Sprint 11', priority: 'Medium', status: 'Done',
-        alignment: 96, due: 'Feb 18', risk: 'Low', module: 'Frontend UI', points: 2,
-        acceptance: ['Pagination loads next page without full reload', 'URL updates with page number', 'Works with filters applied'],
-        description: 'Fix the broken pagination on the analytics dashboard. The current implementation reloads the entire page and loses filter state.',
-        repo: 'gamma-frontend', branch: 'fix/pagination-bug',
-        aiBreakdown: { keyword: 97, filePath: 95, semantic: 96, scopeDrift: 2 },
-        comments: [
-            { author: 'Sneha Iyer', text: 'Quick fix, well done!', time: '3d ago' },
-        ]
-    },
-    {
-        id: 'ST-205', story: 'API Rate Limiting Middleware', sprint: 'Sprint 12', priority: 'High', status: 'In Progress',
-        alignment: 72, due: 'Feb 23', risk: 'High', module: 'API Gateway', points: 8,
-        acceptance: ['Configurable rate limits per endpoint', 'Redis-based token bucket algorithm', 'Return 429 with retry-after header'],
-        description: 'Implement API rate limiting using Redis-based token bucket. Support per-user and per-endpoint limits. Must gracefully degrade if Redis is unavailable.',
-        repo: 'alpha-backend', branch: 'feature/rate-limiting',
-        aiBreakdown: { keyword: 70, filePath: 68, semantic: 72, scopeDrift: 22 },
-        comments: [
-            { author: 'AI Review', text: '⚠️ Scope drift detected — middleware is modifying unrelated auth files.', time: '30m ago' },
-            { author: 'Karan Joshi', text: 'Redis fallback needs to be discussed with DevOps team.', time: '2h ago' },
-        ]
-    },
-    {
-        id: 'ST-206', story: 'Database Migration Script', sprint: 'Sprint 12', priority: 'Medium', status: 'Changes Requested',
-        alignment: 65, due: 'Feb 25', risk: 'High', module: 'Database', points: 5,
-        acceptance: ['Zero-downtime migration', 'Rollback script included', 'Data integrity validation step'],
-        description: 'Write migration scripts for the new user preferences schema. Must support rollback and validate data integrity post-migration.',
-        repo: 'alpha-backend', branch: 'migration/user-prefs-v2',
-        aiBreakdown: { keyword: 62, filePath: 60, semantic: 65, scopeDrift: 28 },
-        comments: [
-            { author: 'Sneha Iyer', text: 'Missing rollback script. Please add before re-review.', time: '1d ago' },
-            { author: 'AI Review', text: '🔴 High scope drift. Migration touches 4 unrelated tables.', time: '12h ago' },
-        ]
-    },
-];
-
 const priorityBadge = { High: 'badge-danger', Medium: 'badge-warning', Low: 'badge-success' };
 const statusBadge = { 'In Progress': 'badge-info', 'To Do': 'badge-neutral', 'In Review': 'badge-warning', Done: 'badge-success', 'Changes Requested': 'badge-danger' };
 const statusOpacity = { 'In Review': 0.55 };
@@ -87,10 +14,15 @@ export default function DevMyTasks() {
     const [tasks, setTasks] = useState([]);
     const [selected, setSelected] = useState(null);
     const [filter, setFilter] = useState('All');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        devAPI.myTasks().then(data => { if (data?.length) setTasks(data); }).catch(() => { });
+        devAPI.myTasks().then(data => { if (data?.length) setTasks(data); })
+            .catch(err => console.error('Failed to fetch tasks:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading tasks...</div>;
 
     const filtered = filter === 'All' ? tasks : tasks.filter(t => t.status === filter);
     const avgAlignment = tasks.length ? Math.round(tasks.reduce((a, t) => a + t.alignment, 0) / tasks.length) : 0;

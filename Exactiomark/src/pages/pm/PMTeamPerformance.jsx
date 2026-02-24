@@ -5,45 +5,33 @@ import { TrendingUp, Users, AlertTriangle, Activity, Award, Cpu } from 'lucide-r
 import { pmAPI } from '../../services/api';
 
 export default function PMTeamPerformance() {
-    const [healthFactors, setHealthFactors] = useState([
-        { label: 'Sprint Completion Rate', value: 82, weight: 25 },
-        { label: 'Alignment Avg', value: 84, weight: 25 },
-        { label: 'Approval Speed', value: 78, weight: 15 },
-        { label: 'DevOps Stability', value: 91, weight: 20 },
-        { label: 'Escalations (inverse)', value: 88, weight: 15 },
-    ]);
-    const [topContributors, setTopContributors] = useState([
-        { name: 'Vikram Singh', score: 89.2, contributions: '26 SP, 94% on-time' },
-        { name: 'Sneha Iyer', score: 86.8, contributions: '18 SP, 88% on-time' },
-        { name: 'Meera Nair', score: 81.4, contributions: '16 SP, 85% on-time' },
-    ]);
-    const [riskContributors, setRiskContributors] = useState([
-        { name: 'Karan Joshi', score: 68.5, issue: 'Low velocity, 3 overdue tasks' },
-        { name: 'Rahul Verma', score: 72.1, issue: 'High rejection rate, 18% deviation' },
-        { name: 'Ananya Reddy', score: 74.3, issue: 'Overloaded at 92% capacity' },
-    ]);
+    const [healthFactors, setHealthFactors] = useState([]);
+    const [topContributors, setTopContributors] = useState([]);
+    const [riskContributors, setRiskContributors] = useState([]);
     const [sprintTrend, setSprintTrend] = useState([]);
+    const [perfAlerts, setPerfAlerts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setLoading(true);
         pmAPI.teamPerformance().then(data => {
             if (!data) return;
             if (data.health_factors?.length) setHealthFactors(data.health_factors);
             if (data.top_contributors?.length) setTopContributors(data.top_contributors);
             if (data.risk_contributors?.length) setRiskContributors(data.risk_contributors);
             if (data.sprint_trend?.length) setSprintTrend(data.sprint_trend);
-        }).catch(() => { });
+            if (data.alerts?.length) setPerfAlerts(data.alerts);
+        }).catch(err => console.error('Failed to fetch team performance:', err))
+            .finally(() => setLoading(false));
     }, []);
 
-    const overallHealth = Math.round(healthFactors.reduce((a, f) => a + (f.value * f.weight / 100), 0));
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading performance data...</div>;
+
+    const overallHealth = healthFactors.length > 0 ? Math.round(healthFactors.reduce((a, f) => a + (f.value * f.weight / 100), 0)) : 0;
+    const avgAlignment = healthFactors.find(f => f.label.includes('Alignment'))?.value || 0;
     const getColor = (v) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
 
 
-
-    const perfAlerts = [
-        { member: 'Karan Joshi', alert: 'Performance dropped 9.1% since last sprint', severity: 'High' },
-        { member: 'Rahul Verma', alert: 'Rejection rate increased to 18%', severity: 'Medium' },
-        { member: 'Ananya Reddy', alert: 'Workload at 92% — risk of burnout', severity: 'High' },
-    ];
 
     const sevColors = { High: '#ef4444', Medium: '#f59e0b', Low: '#10b981' };
 
@@ -52,7 +40,7 @@ export default function PMTeamPerformance() {
             <div className="stats-grid mb-lg">
 
                 <StatsCard icon={<Activity size={24} />} value={`${overallHealth}%`} label="Team Health Score" trend="+2.3%" trendDir="up" color="green" delay={0} />
-                <StatsCard icon={<TrendingUp size={24} />} value="84%" label="Alignment Avg" color="blue" delay={0.08} />
+                <StatsCard icon={<TrendingUp size={24} />} value={`${avgAlignment}%`} label="Alignment Avg" color="blue" delay={0.08} />
                 <StatsCard icon={<Award size={24} />} value={topContributors.length} label="Top Contributors" color="purple" delay={0.16} />
                 <StatsCard icon={<AlertTriangle size={24} />} value={perfAlerts.length} label="Active Alerts" color="red" delay={0.24} />
             </div>

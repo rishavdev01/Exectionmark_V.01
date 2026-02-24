@@ -61,13 +61,11 @@ app.include_router(companies.router,    prefix="/api/companies",   tags=["Compan
 # ── Startup: ensure unique indexes ──
 @app.on_event("startup")
 async def create_indexes():
-    from app.database import users_collection, employees_collection
-    # Enforce unique Employee ID and email for users
-    await users_collection.create_index("id", unique=True)
-    await users_collection.create_index("email", unique=True)
-    # Enforce unique employee id as well
-    await employees_collection.create_index("id", unique=True)
-    print("✅ Unique indexes ensured on users.id, users.email, employees.id")
+    from app.database import user_logins_collection
+    # user_logins is the single source of truth for all employees/users
+    await user_logins_collection.create_index("employee_id", unique=True)
+    await user_logins_collection.create_index("email", unique=True)
+    print("✅ Unique indexes ensured on user_logins.employee_id, user_logins.email")
 
 
 @app.get("/")

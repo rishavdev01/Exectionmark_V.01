@@ -10,20 +10,18 @@ const riskColors = { Low: '#10b981', Medium: '#f59e0b', High: '#ef4444' };
 const alignColor = v => v >= 80 ? '#10b981' : v >= 65 ? '#f59e0b' : '#ef4444';
 
 export default function SMReviewQueue() {
-    const [reviews, setReviews] = useState([
-        { id: 'ST-103', story: 'User Profile API', developer: 'Vikram Singh', alignment: 88, risk: 'Low', submittedAt: '2h ago', status: 'Pending', aiNote: 'Alignment 88% — Code matches scope. Minor documentation gaps detected.' },
-        { id: 'ST-102', story: 'Setup CI/CD Pipeline', developer: 'Ananya Reddy', alignment: 78, risk: 'High', submittedAt: '4h ago', status: 'Pending', aiNote: 'Alignment 78% — Possible DevOps scope drift detected.' },
-        { id: 'ST-104', story: 'Dashboard UI Redesign', developer: 'Rahul Verma', alignment: 65, risk: 'High', submittedAt: '6h ago', status: 'Changes Requested', aiNote: 'Alignment 42% — Significant scope drift.' },
-        { id: 'ST-109', story: 'API Rate Limiting', developer: 'Vikram Singh', alignment: 82, risk: 'Low', submittedAt: '1d ago', status: 'Pending', aiNote: 'Alignment 82% — Looks aligned with sprint backlog.' },
-        { id: 'ST-107', story: 'Notification Service', developer: 'Karan Joshi', alignment: 58, risk: 'High', submittedAt: '2d ago', status: 'Rejected', aiNote: 'Alignment 42% — Implementation does not match story criteria.' },
-    ]);
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [expandedNote, setExpandedNote] = useState(null);
     const [modal, setModal] = useState(null);
 
     useEffect(() => {
-        leadAPI.reviewQueue().then(data => { if (data?.length) setReviews(data); }).catch(() => { });
+        leadAPI.reviewQueue().then(data => { if (data?.length) setReviews(data); })
+            .catch(err => console.error('Failed to fetch review queue:', err))
+            .finally(() => setLoading(false));
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading review queue...</div>;
 
 
     const handleConfirm = (data) => {

@@ -11,8 +11,11 @@ client = AsyncIOMotorClient(settings.MONGO_URI)
 db = client[settings.DB_NAME]
 
 # ── Core Collections ──
-users_collection = db["users"]
-employees_collection = db["employees"]
+# Single source of truth: user_logins holds both auth data AND employee profile data.
+# users_collection and employees_collection are aliases so all existing routes work unchanged.
+user_logins_collection = db["user_logins"]
+users_collection       = db["user_logins"]   # alias → user_logins
+employees_collection   = db["user_logins"]   # alias → user_logins
 sprints_collection = db["sprints"]
 stories_collection = db["stories"]
 tasks_collection = db["tasks"]

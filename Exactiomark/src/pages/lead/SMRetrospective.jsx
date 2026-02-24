@@ -15,10 +15,11 @@ export default function SMRetrospective() {
     const [chainOfThought, setChainOfThought] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCoT, setShowCoT] = useState(false);
-    const [source, setSource] = useState('');
+    const [stats, setStats] = useState({ alignment: 0, rejections: 0, delay: 0, sprint: 0 });
 
     // Load cached data on mount
     useEffect(() => {
+        setLoading(true);
         leadAPI.retrospective().then(data => {
             if (!Array.isArray(data) || !data.length) return;
             const retro = data[0];
@@ -26,7 +27,10 @@ export default function SMRetrospective() {
             if (retro?.went_well?.length) setWentWell(retro.went_well);
             if (retro?.didnt_go_well?.length) setDidntGoWell(retro.didnt_go_well);
             if (retro?.improvements?.length) setImprovements(retro.improvements);
-        }).catch(() => { });
+            if (retro?.avg_alignment) setStats(s => ({ ...s, alignment: retro.avg_alignment }));
+            // Set other stats if available in the retro object
+        }).catch(err => console.error('Failed to fetch initial retrospective:', err))
+            .finally(() => setLoading(false));
     }, []);
 
     // Generate retrospective via AI agent
@@ -41,6 +45,12 @@ export default function SMRetrospective() {
                 setAiSummary(res.ai_summary || '');
                 setChainOfThought(res.chain_of_thought || '');
                 setSource(res.source || '');
+                setStats({
+                    alignment: res.avg_alignment || 0,
+                    rejections: res.rejection_loops || 0, // Assuming these fields exist in backend res
+                    delay: res.approval_delay || 0,
+                    sprint: res.sprint_num || 14
+                });
             }
         } catch (err) {
             console.error('Retrospective generation failed:', err);
@@ -53,13 +63,10 @@ export default function SMRetrospective() {
         <div>
             {/* Stats Row */}
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<TrendingUp size={24} />} value="88%" label="Backend Alignment" color="green" delay={0} />
-                <StatsCard icon={<TrendingDown size={24} />} value="3" label="Rejection Loops" color="red" delay={0.08} />
-                <StatsCard icon={<MessageSquare size={24} />} value="+12%" label="Approval Delay ↑" color="orange" delay={0.16} />
-                <StatsCard icon={<Star size={24} />} value="14" label="Current Sprint" color="blue" delay={0.24} />
+                <StatsCard icon={<TrendingUp size={24} />} value={`${stats.alignment || 0}%`} label="Sprint Alignment" color="green" delay={0} />
+                <StatsCard icon={<TrendingDown size={24} />} value={stats.rejections.toString()} label="Rejection Loops" color="red" delay={0.08} />
+                <StatsCard icon={<MessageSquare size={24} />} value={stats.delay.toString()} label="Approval Delay" color="orange" delay={0.16} />
             </div>
-
-            {/* Generate Button Bar */}
             <AnimatedCard delay={0}>
                 <div className="card-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -5,59 +5,35 @@ import AnimatedCard from '../../components/AnimatedCard';
 import { CheckSquare, Bug, FlaskConical, Shield, Cpu, TrendingUp, BarChart2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 
-const recentStories = [
-    { id: 1, story: 'User Login Flow Redesign', dev: 'Vikram Singh', status: 'Testing', priority: 'High' },
-    { id: 2, story: 'Payment Gateway Integration', dev: 'Rahul Verma', status: 'Passed', priority: 'Critical' },
-    { id: 3, story: 'Dashboard Performance Fix', dev: 'Karan Joshi', status: 'Failed', priority: 'Medium' },
-    { id: 4, story: 'Email Notification Service', dev: 'Meera Nair', status: 'Testing', priority: 'High' },
-];
-
-const bugsByStatus = [
-    { name: 'Open', value: 8, color: '#ef4444' }, { name: 'In Progress', value: 5, color: '#f59e0b' },
-    { name: 'Resolved', value: 14, color: '#10b981' }, { name: 'Reopened', value: 3, color: '#8b5cf6' },
-];
-
-const sprintQuality = [
-    { sprint: 'S8', score: 72 }, { sprint: 'S9', score: 78 }, { sprint: 'S10', score: 82 },
-    { sprint: 'S11', score: 75 }, { sprint: 'S12', score: 85 },
-];
-
 const testStatus = { Testing: 'badge-info', Passed: 'badge-success', Failed: 'badge-danger' };
 
 export default function QADashboard() {
-    const [recentStories, setRecentStories] = useState([
-        { id: 1, story: 'User Login Flow Redesign', dev: 'Vikram Singh', status: 'Testing', priority: 'High' },
-        { id: 2, story: 'Payment Gateway Integration', dev: 'Rahul Verma', status: 'Passed', priority: 'Critical' },
-        { id: 3, story: 'Dashboard Performance Fix', dev: 'Karan Joshi', status: 'Failed', priority: 'Medium' },
-        { id: 4, story: 'Email Notification Service', dev: 'Meera Nair', status: 'Testing', priority: 'High' },
-    ]);
-    const [bugsByStatus, setBugsByStatus] = useState([
-        { name: 'Open', value: 8, color: '#ef4444' }, { name: 'In Progress', value: 5, color: '#f59e0b' },
-        { name: 'Resolved', value: 14, color: '#10b981' }, { name: 'Reopened', value: 3, color: '#8b5cf6' },
-    ]);
-    const [sprintQuality, setSprintQuality] = useState([
-        { sprint: 'S8', score: 72 }, { sprint: 'S9', score: 78 }, { sprint: 'S10', score: 82 },
-        { sprint: 'S11', score: 75 }, { sprint: 'S12', score: 85 },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [recentStories, setRecentStories] = useState([]);
+    const [bugsByStatus, setBugsByStatus] = useState([]);
+    const [sprintQuality, setSprintQuality] = useState([]);
 
     useEffect(() => {
+        setLoading(true);
         dashboardAPI.qa().then(data => {
             if (!data) return;
-            if (data.recent_stories?.length) setRecentStories(data.recent_stories);
-            if (data.bugs_by_status?.length) setBugsByStatus(data.bugs_by_status);
-            if (data.sprint_quality?.length) setSprintQuality(data.sprint_quality);
-        }).catch(() => { });
+            if (data.recent_stories) setRecentStories(data.recent_stories);
+            if (data.bugs_by_status) setBugsByStatus(data.bugs_by_status);
+            if (data.sprint_quality) setSprintQuality(data.sprint_quality);
+        }).catch(err => console.error('Failed to fetch QA dashboard:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading dashboard...</div>;
 
     return (
         <div>
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<CheckSquare size={24} />} value="12" label="Assigned Stories" trend="+3 new" trendDir="up" color="blue" delay={0} />
+                <StatsCard icon={<CheckSquare size={24} />} value={recentStories.length.toString()} label="Active Testing" trend="+3 new" trendDir="up" color="blue" delay={0} />
                 <StatsCard icon={<FlaskConical size={24} />} value="86" label="Total Test Cases" color="green" delay={0.08} />
-                <StatsCard icon={<Bug size={24} />} value="8" label="Open Bugs" trend="2 critical" color="red" delay={0.16} />
-                <StatsCard icon={<Shield size={24} />} value="85%" label="Quality Score" trend="↑ 3%" trendDir="up" color="green" delay={0.24} />
+                <StatsCard icon={<Bug size={24} />} value={bugsByStatus.find(b => b.name === 'Open')?.value.toString() || '0'} label="Open Bugs" trend="2 critical" color="red" delay={0.16} />
+                <StatsCard icon={<Shield size={24} />} value={(sprintQuality[sprintQuality.length - 1]?.score || 0) + '%'} label="Current Quality" trend="↑ 3%" trendDir="up" color="green" delay={0.24} />
             </div>
-
             <div className="grid-2 mb-lg">
                 <AnimatedCard delay={0.3}>
                     <div className="card-header"><span className="card-title">Recent Stories</span></div>

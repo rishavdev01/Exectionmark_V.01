@@ -3,8 +3,8 @@ import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
 const BEHAVIOUR_KEYS = ['communication', 'ownership', 'teamwork', 'adaptability'];
 
-import { TrendingUp, Award, Star, Users, ThumbsUp, MessageCircle, Heart, Zap } from 'lucide-react';
-import { ceoAPI } from '../../services/api';
+import { TrendingUp, Award, Star, Users, ThumbsUp, MessageCircle, Heart, Zap, Loader2 } from 'lucide-react';
+import { ceoAPI, dashboardAPI } from '../../services/api';
 
 const behaviourCriteria = [
     { key: 'communication', label: 'Communication', icon: <MessageCircle size={16} />, desc: 'Clarity, frequency, and effectiveness' },
@@ -23,6 +23,8 @@ export default function PerformanceInsights() {
     const [members, setMembers] = useState([]);
     const [ratings, setRatings] = useState({});
     const [selectedMember, setSelectedMember] = useState('');
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [saveError, setSaveError] = useState(null);
@@ -36,25 +38,35 @@ export default function PerformanceInsights() {
     };
 
     useEffect(() => {
-        ceoAPI.performanceMembers().then(data => {
-            setMembers(data);
-            if (data.length) setSelectedMember(s => s || data[0].name);
-        }).catch(() => { });
-    }, []);
+        const fetchAll = async () => {
+            try {
+                const [membersData, statsData, feedbackList] = await Promise.all([
+                    ceoAPI.performanceMembers(),
+                    dashboardAPI.ceo(), // Reuse CEO dashboard stats for KPIs or add specialist endpoint if needed
+                    ceoAPI.behaviourFeedback()
+                ]);
 
-    useEffect(() => {
-        ceoAPI.behaviourFeedback().then(feedbackList => {
-            const initial = {};
-            feedbackList.forEach(f => {
-                initial[f.name] = {
-                    communication: f.communication ?? 5,
-                    ownership: f.ownership ?? 5,
-                    teamwork: f.teamwork ?? 5,
-                    adaptability: f.adaptability ?? 5,
-                };
-            });
-            setRatings(prev => ({ ...initial, ...prev }));
-        }).catch(() => { });
+                setMembers(membersData || []);
+                if (membersData?.length) setSelectedMember(membersData[0].name);
+                setStats(statsData);
+
+                const initial = {};
+                (feedbackList || []).forEach(f => {
+                    initial[f.name] = {
+                        communication: f.communication ?? 5,
+                        ownership: f.ownership ?? 5,
+                        teamwork: f.teamwork ?? 5,
+                        adaptability: f.adaptability ?? 5,
+                    };
+                });
+                setRatings(initial);
+            } catch (err) {
+                console.error('Failed to fetch performance insights data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
     }, []);
 
     const updateRating = (criteria, value) => {
@@ -93,15 +105,18 @@ export default function PerformanceInsights() {
                 setStatusLog(`Error: ${err?.message || 'Save failed'}`);
             });
     };
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading performance insights...</div>;
+    }
 
     return (
         <div>
             {/* KPI Row */}
             <div className="stats-grid mb-lg">
                 <StatsCard icon={<TrendingUp size={24} />} value="84.8%" label="Avg Performance" trend="+3.2%" trendDir="up" color="green" delay={0} />
-                <StatsCard icon={<Award size={24} />} value="4" label="Promotion Eligible" trend="of 5 members" trendDir="up" color="blue" delay={0.08} />
-                <StatsCard icon={<Star size={24} />} value="8.6" label="Avg Behaviour Score" trend="+0.4" trendDir="up" color="purple" delay={0.16} />
-                <StatsCard icon={<Users size={24} />} value="7.4%" label="Avg Rejection Rate" trend="-2.1%" trendDir="down" color="orange" delay={0.24} />
+                <StatsCard icon={<Award size={24} />} value={members.filter(m => m.promotion).length.toString()} label="Promotion Eligible" trend={`of ${members.length} members`} trendDir="up" color="blue" delay={0.08} />
+                <StatsCard icon={<Star size={24} />} value={(members.reduce((a, b) => a + (b.behaviour || 0), 0) / (members.length || 1)).toFixed(1)} label="Avg Behaviour Score" trend="+0.4" trendDir="up" color="purple" delay={0.16} />
+                <StatsCard icon={<Users size={24} />} value={(members.reduce((a, b) => a + (b.rejection || 0), 0) / (members.length || 1)).toFixed(1) + '%'} label="Avg Rejection Rate" trend="-2.1%" trendDir="down" color="orange" delay={0.24} />
             </div>
 
             {/* Member Performance Table */}

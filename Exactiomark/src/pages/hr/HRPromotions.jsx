@@ -4,7 +4,7 @@ import AnimatedCard from '../../components/AnimatedCard';
 import StatsCard from '../../components/StatsCard';
 import { Award, CheckCircle, Clock, PauseCircle, Send, ThumbsUp, Filter } from 'lucide-react';
 import { employeesAPI, hrAPI } from '../../services/api';
-import { employees as localEmployees } from '../../data/employeeData';
+
 
 const verdictColors = { 'Strongly Recommend': '#10b981', 'Recommend': '#3b82f6', 'Not Recommended': '#ef4444' };
 const decisionColors = { 'Promoted': '#10b981', 'Pending': '#f59e0b', 'Hold': '#ef4444', '—': '#94a3b8' };
@@ -12,10 +12,7 @@ const actionLabels = { 'Promoted': 'Promotion Approved', 'Pending': 'Sent to Rev
 
 export default function HRPromotions() {
     const navigate = useNavigate();
-    const [data, setData] = useState(localEmployees.map(e => ({
-        id: e.id, name: e.name, role: e.role, perfScore: e.perfScore, behaviour: e.behaviour, risk: e.risk,
-        aiVerdict: e.promotion.aiVerdict, managerReview: e.promotion.managerReview, finalDecision: e.promotion.finalDecision,
-    })));
+    const [data, setData] = useState([]);
     const [auditLog, setAuditLog] = useState([]);
 
     useEffect(() => {

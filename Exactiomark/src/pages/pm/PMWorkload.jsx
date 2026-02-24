@@ -9,13 +9,21 @@ import { pmAPI } from '../../services/api';
 export default function PMWorkload() {
     const [workloadData, setWorkloadData] = useState([]);
     const [redistributed, setRedistributed] = useState({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        pmAPI.workload().then(data => { if (data?.length) setWorkloadData(data); }).catch(() => { });
+        setLoading(true);
+        pmAPI.workload()
+            .then(data => { if (data?.length) setWorkloadData(data); })
+            .catch(err => console.error('Failed to fetch PM Workload:', err))
+            .finally(() => setLoading(false));
     }, []);
 
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading workload data...</div>;
 
-    const capacityChart = workloadData.map(w => ({ name: w.name.split(' ')[0], capacity: w.capacity, assigned: Math.round(w.assigned / 10 * 100) }));
+    const avgCapacity = workloadData.length ? Math.round(workloadData.reduce((a, w) => a + w.capacity, 0) / workloadData.length) : 0;
+    const totalOverdue = workloadData.reduce((a, w) => a + (w.overdue || 0), 0);
+    const capacityChart = workloadData.map(w => ({ name: w.name ? w.name.split(' ')[0] : 'Member', capacity: w.capacity || 0, assigned: Math.round((w.assigned || 0) / 10 * 100) }));
 
     const handleRedistribute = (memberName) => {
         setWorkloadData(prev => {
@@ -48,9 +56,9 @@ export default function PMWorkload() {
         <div>
             <div className="stats-grid mb-lg">
                 <StatsCard icon={<Users size={24} />} value={workloadData.length} label="Team Members" color="blue" delay={0} />
-                <StatsCard icon={<BarChart3 size={24} />} value={`${Math.round(workloadData.reduce((a, w) => a + w.capacity, 0) / workloadData.length)}%`} label="Avg Capacity" color="green" delay={0.08} />
+                <StatsCard icon={<BarChart3 size={24} />} value={`${avgCapacity}%`} label="Avg Capacity" color="green" delay={0.08} />
                 <StatsCard icon={<AlertTriangle size={24} />} value={workloadData.filter(w => w.capacity > 80).length} label="Overloaded" color="red" delay={0.16} />
-                <StatsCard icon={<TrendingUp size={24} />} value={workloadData.reduce((a, w) => a + w.overdue, 0)} label="Total Overdue" color="orange" delay={0.24} />
+                <StatsCard icon={<TrendingUp size={24} />} value={totalOverdue} label="Total Overdue" color="orange" delay={0.24} />
             </div>
 
             {/* Workload Table */}

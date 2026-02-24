@@ -12,10 +12,15 @@ import {
 export default function PMDashboard() {
     const navigate = useNavigate();
     const [dashData, setDashData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        dashboardAPI.pm().then(setDashData).catch(() => { });
+        dashboardAPI.pm().then(setDashData)
+            .catch(err => console.error('Failed to fetch PM dashboard:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading dashboard...</div>;
 
     const taskDistribution = dashData?.task_distribution || [
         { name: 'To Do', value: 18, color: '#6b7280' },
@@ -48,10 +53,10 @@ export default function PMDashboard() {
         <div>
             {/* Stats */}
             <div className="stats-grid mb-lg">
-                <StatsCard icon={<Folder size={24} />} value="12" label="Active Sprints" trend="+2" trendDir="up" color="blue" delay={0} />
-                <StatsCard icon={<CheckSquare size={24} />} value="92" label="Total Tasks" trend="18 open" color="orange" delay={0.08} />
-                <StatsCard icon={<CheckCircle size={24} />} value="4" label="Pending Approvals" color="red" delay={0.16} />
-                <StatsCard icon={<Zap size={24} />} value="87%" label="Sprint Velocity" trend="+4%" trendDir="up" color="green" delay={0.24} />
+                <StatsCard icon={<Folder size={24} />} value={dashData?.active_sprints || '0'} label="Active Sprints" trend={dashData?.sprints_trend || ''} trendDir={dashData?.sprints_trend?.includes('+') ? 'up' : 'down'} color="blue" delay={0} />
+                <StatsCard icon={<CheckSquare size={24} />} value={dashData?.total_tasks || '0'} label="Total Tasks" trend={dashData?.tasks_trend || ''} color="orange" delay={0.08} />
+                <StatsCard icon={<CheckCircle size={24} />} value={dashData?.pending_approvals || '0'} label="Pending Approvals" color="red" delay={0.16} />
+                <StatsCard icon={<Zap size={24} />} value={`${dashData?.sprint_velocity || '0'}%`} label="Sprint Velocity" trend={dashData?.velocity_trend || ''} trendDir={dashData?.velocity_trend?.includes('+') ? 'up' : 'down'} color="green" delay={0.24} />
             </div>
 
             <div className="grid-2 mb-lg">

@@ -11,32 +11,35 @@ const getColor = (v) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
 
 export default function PMMyTeam() {
     const navigate = useNavigate();
-    const [teamMembers, setTeamMembers] = useState([
-        { id: 1, name: 'Vikram Singh', role: 'Developer', avatar: 'VS', sprintTasks: 8, alignmentAvg: 91, onTime: 94, risk: 'Low', workload: 72, status: 'Active' },
-        { id: 2, name: 'Sneha Iyer', role: 'Scrum Master', avatar: 'SI', sprintTasks: 5, alignmentAvg: 87, onTime: 88, risk: 'Low', workload: 65, status: 'Active' },
-        { id: 3, name: 'Ananya Reddy', role: 'DevOps', avatar: 'AR', sprintTasks: 7, alignmentAvg: 78, onTime: 72, risk: 'High', workload: 92, status: 'Active' },
-        { id: 4, name: 'Rahul Verma', role: 'Developer', avatar: 'RV', sprintTasks: 6, alignmentAvg: 70, onTime: 68, risk: 'Medium', workload: 58, status: 'Probation' },
-        { id: 5, name: 'Meera Nair', role: 'QA Engineer', avatar: 'MN', sprintTasks: 4, alignmentAvg: 83, onTime: 85, risk: 'Low', workload: 60, status: 'Active' },
-        { id: 6, name: 'Karan Joshi', role: 'Developer', avatar: 'KJ', sprintTasks: 3, alignmentAvg: 65, onTime: 62, risk: 'High', workload: 45, status: 'On Leave' },
-    ]);
+    const [teamMembers, setTeamMembers] = useState([]);
     const [search, setSearch] = useState('');
     const [selectedMember, setSelectedMember] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        pmAPI.team().then(data => { if (data?.length) setTeamMembers(data); }).catch(() => { });
+        setLoading(true);
+        pmAPI.team()
+            .then(data => { if (data?.length) setTeamMembers(data); })
+            .catch(err => console.error('Failed to fetch PM Team data:', err))
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) return <div style={{ textAlign: 'center', padding: 100, color: 'var(--text-tertiary)' }}>Loading team data...</div>;
 
     const filtered = teamMembers.filter(m => !search || m.name.toLowerCase().includes(search.toLowerCase()));
 
-
+    // Dynamic stats
+    const avgAlignment = teamMembers.length ? (teamMembers.reduce((a, m) => a + m.alignmentAvg, 0) / teamMembers.length).toFixed(1) : '0';
+    const highRiskCount = teamMembers.filter(m => m.risk === 'High').length;
+    const avgOnTime = teamMembers.length ? (teamMembers.reduce((a, m) => a + m.onTime, 0) / teamMembers.length).toFixed(1) : '0';
 
     return (
         <div>
             <div className="stats-grid mb-lg">
                 <StatsCard icon={<Users size={24} />} value={teamMembers.length} label="Team Members" color="blue" delay={0} />
-                <StatsCard icon={<TrendingUp size={24} />} value="82.3%" label="Avg Alignment" trend="+2.1%" trendDir="up" color="green" delay={0.08} />
-                <StatsCard icon={<AlertTriangle size={24} />} value={teamMembers.filter(m => m.risk === 'High').length} label="High Risk" color="red" delay={0.16} />
-                <StatsCard icon={<Shield size={24} />} value="78.6%" label="Avg On-Time" color="purple" delay={0.24} />
+                <StatsCard icon={<TrendingUp size={24} />} value={`${avgAlignment}%`} label="Avg Alignment" color="green" delay={0.08} />
+                <StatsCard icon={<AlertTriangle size={24} />} value={highRiskCount} label="High Risk" color="red" delay={0.16} />
+                <StatsCard icon={<Shield size={24} />} value={`${avgOnTime}%`} label="Avg On-Time" color="purple" delay={0.24} />
             </div>
 
             <div style={{ display: 'flex', gap: 20 }}>
