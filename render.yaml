@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: exactiomark-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URI
+        sync: false          # set manually in Render dashboard
+      - key: DB_NAME
+        value: exactionmark
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: FRONTEND_URL
+        sync: false          # set to your Vercel URL after deploy

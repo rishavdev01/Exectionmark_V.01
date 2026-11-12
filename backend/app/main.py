@@ -15,11 +15,17 @@ from app.routes import (
     companies,
 )
 
+import os
+
 app = FastAPI(title="Exactiomark API", version="2.0.0")
+
+# Allow Vercel frontend + local dev; set FRONTEND_URL env var on Render
+_frontend_url = os.getenv("FRONTEND_URL", "")
+_allowed_origins = [o.strip() for o in _frontend_url.split(",") if o.strip()] if _frontend_url else ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
